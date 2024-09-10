@@ -17,7 +17,17 @@
 	"[github-actions-workflow]": {
 		"editor.insertSpaces": true,
 	},
+	"[glsl]": {
+		"editor.formatOnSave": false,
+	},
+	"[fract]": {
+		"editor.formatOnSave": false,
+	},
+	"[vert]": {
+		"editor.formatOnSave": false,
+	},
 	"cSpell.words": [
+		"wgsl",
 		"zyheeda"
 	]
 }
