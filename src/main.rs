@@ -20,7 +20,6 @@ fn setup(
 	mut meshes: ResMut<Assets<Mesh>>,
 	mut standard_materials: ResMut<Assets<StandardMaterial>>,
 	mut custom_materials: ResMut<Assets<CustomMaterial>>,
-	asset_server: Res<AssetServer>,
 ) {
 	commands.spawn(MaterialMeshBundle {
 		mesh: meshes.add(Plane3d::new(Vec3::Y, Vec2::new(5., 5.))),
@@ -35,7 +34,6 @@ fn setup(
 	let rotation_center = Vec3::new(0.0, 0.5, 0.0);
 	let material = custom_materials.add(CustomMaterial {
 		color: DARK_CYAN.into(),
-		color_texture: Some(asset_server.load("branding/icon.png")),
 		alpha_mode: AlphaMode::Blend,
 	});
 
@@ -98,9 +96,6 @@ fn move_camera(
 struct CustomMaterial {
 	#[uniform(0)]
 	color: LinearRgba,
-	#[texture(1)]
-	#[sampler(2)]
-	color_texture: Option<Handle<Image>>,
 	alpha_mode: AlphaMode,
 }
 
