@@ -3,10 +3,8 @@ use bevy::{
 	input::mouse::{MouseMotion, MouseWheel},
 	math::vec3,
 	prelude::*,
-	reflect::TypePath,
-	render::render_resource::{AsBindGroup, ShaderRef},
 };
-use project_zyheeda_bevy_shaders::zoom_change::ZoomChange;
+use project_zyheeda_bevy_shaders::{material::CustomMaterial, zoom_change::ZoomChange};
 
 fn main() {
 	App::new()
@@ -117,26 +115,5 @@ fn zoom_camera(
 
 		let zoomed_distance = f32::max(3., distance + change);
 		cam.translation = center - cam.forward().as_vec3() * zoomed_distance;
-	}
-}
-
-#[derive(Asset, TypePath, AsBindGroup, Clone)]
-struct CustomMaterial {
-	#[uniform(0)]
-	color: LinearRgba,
-	alpha_mode: AlphaMode,
-}
-
-impl Material for CustomMaterial {
-	fn fragment_shader() -> ShaderRef {
-		"shaders/custom_material.wgsl".into()
-	}
-
-	fn vertex_shader() -> ShaderRef {
-		"shaders/custom_material.wgsl".into()
-	}
-
-	fn alpha_mode(&self) -> AlphaMode {
-		self.alpha_mode
 	}
 }
