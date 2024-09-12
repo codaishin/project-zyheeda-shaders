@@ -10,7 +10,7 @@ fn main() {
 	App::new()
 		.add_plugins((DefaultPlugins, MaterialPlugin::<CustomMaterial>::default()))
 		.add_systems(Startup, setup)
-		.add_systems(Update, move_camera)
+		.add_systems(Update, rotate_camera)
 		.add_systems(Update, zoom_camera)
 		.run();
 }
@@ -68,7 +68,7 @@ fn setup(
 	});
 }
 
-fn move_camera(
+fn rotate_camera(
 	time: Res<Time<Real>>,
 	mut cams: Query<&mut Transform, With<Camera>>,
 	mut mouse_motion: EventReader<MouseMotion>,
