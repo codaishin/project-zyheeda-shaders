@@ -1,17 +1,17 @@
 use bevy::{
 	color::palettes::css::{DARK_CYAN, WHITE},
-	input::mouse::MouseMotion,
+	input::mouse::{MouseMotion, MouseWheel},
 	math::vec3,
 	prelude::*,
-	reflect::TypePath,
-	render::render_resource::{AsBindGroup, ShaderRef},
 };
+use project_zyheeda_bevy_shaders::{material::CustomMaterial, zoom_change::ZoomChange};
 
 fn main() {
 	App::new()
 		.add_plugins((DefaultPlugins, MaterialPlugin::<CustomMaterial>::default()))
 		.add_systems(Startup, setup)
-		.add_systems(Update, move_camera)
+		.add_systems(Update, rotate_camera)
+		.add_systems(Update, zoom_camera)
 		.run();
 }
 
@@ -68,7 +68,7 @@ fn setup(
 	});
 }
 
-fn move_camera(
+fn rotate_camera(
 	time: Res<Time<Real>>,
 	mut cams: Query<&mut Transform, With<Camera>>,
 	mut mouse_motion: EventReader<MouseMotion>,
@@ -92,23 +92,28 @@ fn move_camera(
 	}
 }
 
-#[derive(Asset, TypePath, AsBindGroup, Clone)]
-struct CustomMaterial {
-	#[uniform(0)]
-	color: LinearRgba,
-	alpha_mode: AlphaMode,
-}
+fn zoom_camera(
+	time: Res<Time<Real>>,
+	mut cams: Query<&mut Transform, With<Camera>>,
+	mut mouse_wheel: EventReader<MouseWheel>,
+) {
+	let Ok(mut cam) = cams.get_single_mut() else {
+		return;
+	};
+	let center = vec3(0.0, 0.5, 0.0);
 
-impl Material for CustomMaterial {
-	fn fragment_shader() -> ShaderRef {
-		"shaders/custom_material.wgsl".into()
-	}
+	for event in mouse_wheel.read() {
+		let Ok(change) = ZoomChange::try_from(event) else {
+			continue;
+		};
 
-	fn vertex_shader() -> ShaderRef {
-		"shaders/custom_material.wgsl".into()
-	}
+		let distance = (cam.translation - center).length();
+		let change = *change
+			.scaled_by(10.)
+			.scaled_by(time.delta_seconds())
+			.scaled_by(distance);
 
-	fn alpha_mode(&self) -> AlphaMode {
-		self.alpha_mode
+		let zoomed_distance = f32::max(3., distance + change);
+		cam.translation = center - cam.forward().as_vec3() * zoomed_distance;
 	}
 }
