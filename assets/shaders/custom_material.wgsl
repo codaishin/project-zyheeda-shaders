@@ -1,6 +1,7 @@
 #import bevy_pbr::mesh_functions::{get_world_from_local, mesh_position_local_to_clip}
 
 @group(2) @binding(0) var<uniform> material_color: vec4<f32>;
+@group(2) @binding(1) var<uniform> time_secs: f32;
 
 struct Vertex {
     @builtin(instance_index) instance_index: u32,

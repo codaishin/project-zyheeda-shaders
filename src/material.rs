@@ -7,10 +7,12 @@ use bevy::{
 	render::render_resource::{AsBindGroup, ShaderRef},
 };
 
-#[derive(Asset, TypePath, AsBindGroup, Clone)]
+#[derive(Asset, TypePath, AsBindGroup, Clone, Default)]
 pub struct CustomMaterial {
 	#[uniform(0)]
 	pub color: LinearRgba,
+	#[uniform(1)]
+	pub time_secs: f32,
 	pub alpha_mode: AlphaMode,
 }
 

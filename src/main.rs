@@ -12,6 +12,7 @@ fn main() {
 		.add_systems(Startup, setup)
 		.add_systems(Update, rotate_camera)
 		.add_systems(Update, zoom_camera)
+		.add_systems(Update, material_time)
 		.run();
 }
 
@@ -35,6 +36,7 @@ fn setup(
 	let material = custom_materials.add(CustomMaterial {
 		color: DARK_CYAN.into(),
 		alpha_mode: AlphaMode::Blend,
+		..default()
 	});
 
 	commands.spawn(MaterialMeshBundle {
@@ -115,5 +117,18 @@ fn zoom_camera(
 
 		let zoomed_distance = f32::max(3., distance + change);
 		cam.translation = center - cam.forward().as_vec3() * zoomed_distance;
+	}
+}
+
+fn material_time(
+	time: Res<Time<Real>>,
+	materials: Query<&Handle<CustomMaterial>>,
+	mut custom_materials: ResMut<Assets<CustomMaterial>>,
+) {
+	for handle in &materials {
+		let Some(material) = custom_materials.get_mut(handle) else {
+			continue;
+		};
+		material.time_secs = time.elapsed_seconds();
 	}
 }
