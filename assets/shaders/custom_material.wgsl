@@ -16,12 +16,17 @@ struct VertexOutput {
     @location(1) uv: vec2<f32>,
 };
 
+fn update_position(position: vec4<f32>) -> vec4<f32> {
+    return position;
+}
+
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
     var out: VertexOutput;
     var world = get_world_from_local(vertex.instance_index);
     var vertex_position = vec4<f32>(vertex.position, 1.0);
-    out.clip_position = mesh_position_local_to_clip(world, vertex_position);
+    var clip_position = mesh_position_local_to_clip(world, vertex_position);
+    out.clip_position = update_position(clip_position);
     out.blend_color = vertex.blend_color;
     out.uv = vertex.uv;
     return out;
