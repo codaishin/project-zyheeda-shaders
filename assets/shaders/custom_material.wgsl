@@ -2,6 +2,8 @@
 
 @group(2) @binding(0) var<uniform> material_color: vec4<f32>;
 @group(2) @binding(1) var<uniform> time_secs: f32;
+@group(2) @binding(2) var material_color_texture: texture_2d<f32>;
+@group(2) @binding(3) var material_color_sampler: sampler;
 
 struct Vertex {
     @builtin(instance_index) instance_index: u32,

@@ -1,8 +1,8 @@
 use bevy::{
-	asset::Asset,
+	asset::{Asset, Handle},
 	color::LinearRgba,
 	pbr::Material,
-	prelude::AlphaMode,
+	prelude::{AlphaMode, Image},
 	reflect::TypePath,
 	render::render_resource::{AsBindGroup, ShaderRef},
 };
@@ -13,6 +13,9 @@ pub struct CustomMaterial {
 	pub color: LinearRgba,
 	#[uniform(1)]
 	pub time_secs: f32,
+	#[texture(2)]
+	#[sampler(3)]
+	pub color_texture: Option<Handle<Image>>,
 	pub alpha_mode: AlphaMode,
 }
 
