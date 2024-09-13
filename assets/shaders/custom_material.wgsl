@@ -29,5 +29,5 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
-    return material_color * vec4(1., 1., 1., 1.);
+    return material_color * vec4(1., 1., 1., 0.5);
 }
