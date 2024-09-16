@@ -4,12 +4,18 @@ use bevy::{
 	math::vec3,
 	prelude::*,
 };
-use project_zyheeda_bevy_shaders::{material::CustomMaterial, zoom_change::ZoomChange};
+use project_zyheeda_bevy_shaders::{
+	bundles::MaterialAssetBundle,
+	components::ReplacementMaterial,
+	material::CustomMaterial,
+	zoom_change::ZoomChange,
+};
 
 fn main() {
 	App::new()
 		.add_plugins((DefaultPlugins, MaterialPlugin::<CustomMaterial>::default()))
 		.add_systems(Startup, setup)
+		.add_systems(Update, replace_standard_material)
 		.add_systems(Update, rotate_camera)
 		.add_systems(Update, zoom_camera)
 		.add_systems(Update, material_time)
@@ -21,6 +27,7 @@ fn setup(
 	mut meshes: ResMut<Assets<Mesh>>,
 	mut standard_materials: ResMut<Assets<StandardMaterial>>,
 	mut custom_materials: ResMut<Assets<CustomMaterial>>,
+	asset_server: Res<AssetServer>,
 ) {
 	commands.spawn(MaterialMeshBundle {
 		mesh: meshes.add(Plane3d::new(Vec3::Y, Vec2::new(5., 5.))),
@@ -39,10 +46,10 @@ fn setup(
 		..default()
 	});
 
-	commands.spawn(MaterialMeshBundle {
-		mesh: meshes.add(Cuboid::default()),
+	commands.spawn(MaterialAssetBundle {
+		asset: asset_server.load("models/shield.glb#Scene0"),
 		transform: Transform::from_translation(rotation_center - Vec3::X * 1.),
-		material: material.clone(),
+		material: ReplacementMaterial(material.clone()),
 		..default()
 	});
 
@@ -68,6 +75,28 @@ fn setup(
 		},
 		..default()
 	});
+}
+
+fn replace_standard_material(
+	mut commands: Commands,
+	replacements: Query<&ReplacementMaterial>,
+	materials: Query<Entity, Added<Handle<StandardMaterial>>>,
+	parents: Query<&Parent>,
+) {
+	let get_replacement = |entity| replacements.get(entity).ok();
+	let find_replacement = |entity| parents.iter_ancestors(entity).find_map(get_replacement);
+
+	for entity in &materials {
+		let Some(ReplacementMaterial(handle)) = find_replacement(entity) else {
+			continue;
+		};
+		let Some(mut entity) = commands.get_entity(entity) else {
+			continue;
+		};
+
+		entity.insert(handle.clone());
+		entity.remove::<Handle<StandardMaterial>>();
+	}
 }
 
 fn rotate_camera(
