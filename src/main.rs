@@ -11,6 +11,7 @@ use project_zyheeda_bevy_shaders::{
 	systems::{
 		cam_movement::cam_movement,
 		holding_button::holding_button,
+		replace_standard_material::replace_standard_material,
 		set_material_time::set_material_time,
 	},
 };
@@ -21,12 +22,12 @@ fn main() {
 		.init_resource::<CameraRotationSettings>()
 		.init_resource::<CameraZoomSettings>()
 		.add_systems(Startup, setup)
-		.add_systems(Update, replace_standard_material)
 		.add_systems(
 			Update,
 			cam_movement::<MouseMotion>.run_if(holding_button(MouseButton::Right)),
 		)
 		.add_systems(Update, cam_movement::<MouseWheel>)
+		.add_systems(Update, replace_standard_material)
 		.add_systems(Update, set_material_time)
 		.run();
 }
@@ -84,26 +85,4 @@ fn setup(
 		},
 		..default()
 	});
-}
-
-fn replace_standard_material(
-	mut commands: Commands,
-	replacements: Query<&ReplacementMaterial>,
-	materials: Query<Entity, Added<Handle<StandardMaterial>>>,
-	parents: Query<&Parent>,
-) {
-	let get_replacement = |entity| replacements.get(entity).ok();
-	let find_replacement = |entity| parents.iter_ancestors(entity).find_map(get_replacement);
-
-	for entity in &materials {
-		let Some(ReplacementMaterial(handle)) = find_replacement(entity) else {
-			continue;
-		};
-		let Some(mut entity) = commands.get_entity(entity) else {
-			continue;
-		};
-
-		entity.insert(handle.clone());
-		entity.remove::<Handle<StandardMaterial>>();
-	}
 }
