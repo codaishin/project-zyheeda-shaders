@@ -1,15 +1,16 @@
 use super::{Anchor, AnchoredMovement, Seconds};
+use crate::resources::CameraZoomSettings;
 use bevy::{input::mouse::MouseWheel, prelude::*};
 
-const SENSITIVITY: f32 = 10.;
-const MIN_DISTANCE: f32 = 3.;
-
 impl AnchoredMovement for MouseWheel {
+	type TExtra = CameraZoomSettings;
+
 	fn anchored_movement(
 		&self,
 		agent: &mut Transform,
 		Anchor(target): Anchor,
 		Seconds(delta): Seconds,
+		settings: CameraZoomSettings,
 	) {
 		let Some(zoom) = get_zoom(self) else {
 			return;
@@ -17,8 +18,8 @@ impl AnchoredMovement for MouseWheel {
 
 		let direction = agent.translation - target;
 		let distance = direction.length();
-		let zoom = zoom * distance * SENSITIVITY * delta;
-		let zoomed_distance = f32::max(distance - zoom, MIN_DISTANCE);
+		let zoom = zoom * distance * settings.sensitivity * delta;
+		let zoomed_distance = f32::max(distance - zoom, settings.minimal_distance);
 
 		agent.translation = target + direction.normalize() * zoomed_distance;
 	}
@@ -57,46 +58,119 @@ mod tests {
 	}
 
 	#[test]
-	fn zoom_out_x_10_units() {
+	fn zoom_out_x_2_units() {
 		let mut agent = Transform::from_xyz(1., 0., 0.);
 		let event = mouse_wheel(Zoom::Out(1));
 
-		event.anchored_movement(&mut agent, Anchor(Vec3::new(0., 0., 0.)), Seconds(1.));
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(0., 0., 0.)),
+			Seconds(1.),
+			CameraZoomSettings {
+				sensitivity: 2.,
+				..default()
+			},
+		);
 
-		assert_eq!(Transform::from_xyz(11., 0., 0.), agent);
+		assert_eq!(Transform::from_xyz(3., 0., 0.), agent);
 	}
 
 	#[test]
-	fn zoom_out_y_10_units() {
+	fn zoom_out_x_5_units() {
+		let mut agent = Transform::from_xyz(1., 0., 0.);
+		let event = mouse_wheel(Zoom::Out(1));
+
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(0., 0., 0.)),
+			Seconds(1.),
+			CameraZoomSettings {
+				sensitivity: 5.,
+				..default()
+			},
+		);
+
+		assert_eq!(Transform::from_xyz(6., 0., 0.), agent);
+	}
+
+	#[test]
+	fn zoom_out_y_2_units() {
 		let mut agent = Transform::from_xyz(0., 1., 0.);
 		let event = mouse_wheel(Zoom::Out(1));
 
-		event.anchored_movement(&mut agent, Anchor(Vec3::new(0., 0., 0.)), Seconds(1.));
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(0., 0., 0.)),
+			Seconds(1.),
+			CameraZoomSettings {
+				sensitivity: 2.,
+				..default()
+			},
+		);
 
 		assert_eq!(
 			Transform::from_translation(
-				Vec3::new(0., 1., 0.) + Vec3::new(0., 1., 0.).normalize() * 10.
+				Vec3::new(0., 1., 0.) + Vec3::new(0., 1., 0.).normalize() * 2.
 			),
 			agent
 		);
 	}
 
 	#[test]
-	fn zoom_out_x_10_units_with_offset() {
-		let mut agent = Transform::from_xyz(1., 0., 0.);
+	fn zoom_out_y_5_units() {
+		let mut agent = Transform::from_xyz(0., 1., 0.);
 		let event = mouse_wheel(Zoom::Out(1));
 
-		event.anchored_movement(&mut agent, Anchor(Vec3::new(2., 0., 0.)), Seconds(1.));
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(0., 0., 0.)),
+			Seconds(1.),
+			CameraZoomSettings {
+				sensitivity: 5.,
+				..default()
+			},
+		);
 
-		assert_eq!(Transform::from_xyz(-9., 0., 0.), agent);
+		assert_eq!(
+			Transform::from_translation(
+				Vec3::new(0., 1., 0.) + Vec3::new(0., 1., 0.).normalize() * 5.
+			),
+			agent
+		);
+	}
+
+	#[test]
+	fn zoom_out_x_units_with_anchor_offset() {
+		let mut agent = Transform::from_xyz(6., 0., 0.);
+		let event = mouse_wheel(Zoom::Out(1));
+
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(2., 0., 0.)),
+			Seconds(1.),
+			CameraZoomSettings {
+				sensitivity: 1.,
+				..default()
+			},
+		);
+
+		assert_eq!(Transform::from_xyz(10., 0., 0.), agent);
 	}
 
 	#[test]
 	fn zoom_out_scaled_by_delta() {
-		let mut agent = Transform::from_xyz(1., 0., 0.);
+		let mut agent = Transform::from_xyz(4., 0., 0.);
 		let event = mouse_wheel(Zoom::Out(1));
 
-		event.anchored_movement(&mut agent, Anchor(Vec3::new(0., 0., 0.)), Seconds(0.5));
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(0., 0., 0.)),
+			Seconds(0.5),
+			CameraZoomSettings {
+				sensitivity: 1.,
+				..default()
+			},
+		);
 
 		assert_eq!(Transform::from_xyz(6., 0., 0.), agent);
 	}
@@ -106,9 +180,17 @@ mod tests {
 		let mut agent = Transform::from_xyz(5., 0., 0.);
 		let event = mouse_wheel(Zoom::Out(1));
 
-		event.anchored_movement(&mut agent, Anchor(Vec3::new(0., 0., 0.)), Seconds(1.));
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(0., 0., 0.)),
+			Seconds(1.),
+			CameraZoomSettings {
+				sensitivity: 1.,
+				..default()
+			},
+		);
 
-		assert_eq!(Transform::from_xyz(55., 0., 0.), agent);
+		assert_eq!(Transform::from_xyz(10., 0., 0.), agent);
 	}
 
 	#[test]
@@ -116,29 +198,53 @@ mod tests {
 		let mut agent = Transform::from_xyz(10., 0., 0.);
 		let event = mouse_wheel(Zoom::In(1));
 
-		event.anchored_movement(&mut agent, Anchor(Vec3::new(0., 0., 0.)), Seconds(0.01));
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(0., 0., 0.)),
+			Seconds(1.),
+			CameraZoomSettings {
+				sensitivity: 0.1,
+				..default()
+			},
+		);
 
 		assert_eq!(Transform::from_xyz(9., 0., 0.), agent);
 	}
 
 	#[test]
-	fn zoom_in_limited_to_3_units() {
+	fn zoom_in_is_limited() {
 		let mut agent = Transform::from_xyz(10., 0., 0.);
 		let event = mouse_wheel(Zoom::In(1));
 
-		event.anchored_movement(&mut agent, Anchor(Vec3::new(0., 0., 0.)), Seconds(1.));
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(0., 0., 0.)),
+			Seconds(1.),
+			CameraZoomSettings {
+				sensitivity: 1.,
+				minimal_distance: 4.,
+			},
+		);
 
-		assert_eq!(Transform::from_xyz(3., 0., 0.), agent);
+		assert_eq!(Transform::from_xyz(4., 0., 0.), agent);
 	}
 
 	#[test]
 	fn zoom_out_independent_from_zoom_amount() {
-		let mut agent = Transform::from_xyz(10., 0., 0.);
+		let mut agent = Transform::from_xyz(5., 0., 0.);
 		let event = mouse_wheel(Zoom::Out(2));
 
-		event.anchored_movement(&mut agent, Anchor(Vec3::new(0., 0., 0.)), Seconds(0.01));
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(0., 0., 0.)),
+			Seconds(1.),
+			CameraZoomSettings {
+				sensitivity: 1.,
+				..default()
+			},
+		);
 
-		assert_eq!(Transform::from_xyz(11., 0., 0.), agent);
+		assert_eq!(Transform::from_xyz(10., 0., 0.), agent);
 	}
 
 	#[test]
@@ -146,7 +252,15 @@ mod tests {
 		let mut agent = Transform::from_xyz(10., 0., 0.);
 		let event = mouse_wheel(Zoom::In(2));
 
-		event.anchored_movement(&mut agent, Anchor(Vec3::new(0., 0., 0.)), Seconds(0.01));
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(0., 0., 0.)),
+			Seconds(0.1),
+			CameraZoomSettings {
+				sensitivity: 1.,
+				..default()
+			},
+		);
 
 		assert_eq!(Transform::from_xyz(9., 0., 0.), agent);
 	}
@@ -156,7 +270,15 @@ mod tests {
 		let mut agent = Transform::from_xyz(1., 0., 0.);
 		let event = mouse_wheel(Zoom::None);
 
-		event.anchored_movement(&mut agent, Anchor(Vec3::new(0., 0., 0.)), Seconds(1.));
+		event.anchored_movement(
+			&mut agent,
+			Anchor(Vec3::new(0., 0., 0.)),
+			Seconds(1.),
+			CameraZoomSettings {
+				sensitivity: 1.,
+				..default()
+			},
+		);
 
 		assert_eq!(Transform::from_xyz(1., 0., 0.), agent);
 	}

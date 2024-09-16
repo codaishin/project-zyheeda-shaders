@@ -7,12 +7,15 @@ use project_zyheeda_bevy_shaders::{
 	bundles::MaterialAssetBundle,
 	components::ReplacementMaterial,
 	material::CustomMaterial,
+	resources::{CameraRotationSettings, CameraZoomSettings},
 	systems::{cam_movement::cam_movement, holding_button::holding_button},
 };
 
 fn main() {
 	App::new()
 		.add_plugins((DefaultPlugins, MaterialPlugin::<CustomMaterial>::default()))
+		.init_resource::<CameraRotationSettings>()
+		.init_resource::<CameraZoomSettings>()
 		.add_systems(Startup, setup)
 		.add_systems(Update, replace_standard_material)
 		.add_systems(

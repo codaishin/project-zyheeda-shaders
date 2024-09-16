@@ -1,27 +1,35 @@
 use crate::traits::movement::{Anchor, AnchoredMovement, Seconds};
 use bevy::prelude::*;
 
-pub fn cam_movement<TEvent: AnchoredMovement + Event>(
+pub fn cam_movement<TEvent>(
 	time: Res<Time<Real>>,
+	extra: Res<TEvent::TExtra>,
 	mut cameras: Query<&mut Transform, With<Camera>>,
 	mut events: EventReader<TEvent>,
-) {
+) where
+	TEvent: AnchoredMovement + Event,
+	TEvent::TExtra: Resource + Copy,
+{
 	let around = Anchor(Vec3::new(0., 0.5, 0.));
 	let delta = Seconds(time.delta_seconds());
 
 	for event in events.read() {
-		apply_event_transformations(&mut cameras, event, around, delta);
+		apply_event_transformations(&mut cameras, event, around, delta, *extra);
 	}
 }
 
-fn apply_event_transformations<TEvent: AnchoredMovement>(
+fn apply_event_transformations<TEvent>(
 	cameras: &mut Query<&mut Transform, With<Camera>>,
 	event: &TEvent,
 	around: Anchor,
 	delta: Seconds,
-) {
+	extra: TEvent::TExtra,
+) where
+	TEvent: AnchoredMovement,
+	TEvent::TExtra: Copy,
+{
 	for mut transform in cameras {
-		event.anchored_movement(transform.as_mut(), around, delta);
+		event.anchored_movement(transform.as_mut(), around, delta, extra);
 	}
 }
 
@@ -30,13 +38,16 @@ mod tests {
 	use super::*;
 	use crate::traits::movement::{Anchor, Seconds};
 	use bevy::ecs::system::RunSystemOnce;
-	use mockall::{mock, predicate::eq};
+	use mockall::{automock, predicate::eq};
 	use std::time::{Duration, Instant};
 
 	#[derive(Event)]
 	struct MyEvent {
 		mock: MockMyEvent,
 	}
+
+	#[derive(Resource, Default, Debug, PartialEq, Clone, Copy)]
+	pub struct MyExtra;
 
 	impl MyEvent {
 		fn with_mock(mut setup: impl FnMut(&mut MockMyEvent)) -> Self {
@@ -49,8 +60,16 @@ mod tests {
 
 	#[automock]
 	impl AnchoredMovement for MyEvent {
-		fn anchored_movement(&self, agent: &mut Transform, around: Anchor, delta: Seconds) {
-			self.mock.anchored_movement(agent, around, delta);
+		type TExtra = MyExtra;
+
+		fn anchored_movement(
+			&self,
+			agent: &mut Transform,
+			around: Anchor,
+			delta: Seconds,
+			extra: Self::TExtra,
+		) {
+			self.mock.anchored_movement(agent, around, delta, extra);
 		}
 	}
 
@@ -63,6 +82,7 @@ mod tests {
 	fn setup() -> App {
 		let mut app = App::new();
 		app.world_mut().init_resource::<Time<Real>>();
+		app.init_resource::<MyExtra>();
 		app.add_event::<MyEvent>();
 
 		tick_time(&mut app, Duration::ZERO);
@@ -85,6 +105,7 @@ mod tests {
 					eq(Transform::from_xyz(1., 2., 3.)),
 					eq(Anchor(Vec3::new(0., 0.5, 0.))),
 					eq(Seconds(42.)),
+					eq(MyExtra),
 				)
 				.times(1)
 				.return_const(());
@@ -123,6 +144,7 @@ mod tests {
 					eq(Transform::from_xyz(1., 2., 3.)),
 					eq(Anchor(Vec3::new(0., 0.5, 0.))),
 					eq(Seconds(11.)),
+					eq(MyExtra),
 				)
 				.times(1)
 				.return_const(());
@@ -131,6 +153,7 @@ mod tests {
 					eq(Transform::from_xyz(4., 5., 6.)),
 					eq(Anchor(Vec3::new(0., 0.5, 0.))),
 					eq(Seconds(11.)),
+					eq(MyExtra),
 				)
 				.times(1)
 				.return_const(());
