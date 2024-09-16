@@ -1,4 +1,7 @@
 pub mod bundles;
 pub mod components;
 pub mod material;
-pub mod zoom_change;
+pub mod resources;
+pub mod systems;
+pub mod tools;
+pub mod traits;

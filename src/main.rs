@@ -1,24 +1,34 @@
 use bevy::{
 	color::palettes::css::{DARK_CYAN, WHITE},
 	input::mouse::{MouseMotion, MouseWheel},
-	math::vec3,
 	prelude::*,
 };
 use project_zyheeda_bevy_shaders::{
 	bundles::MaterialAssetBundle,
 	components::ReplacementMaterial,
 	material::CustomMaterial,
-	zoom_change::ZoomChange,
+	resources::{CameraRotationSettings, CameraZoomSettings},
+	systems::{
+		cam_movement::cam_movement,
+		holding_button::holding_button,
+		replace_standard_material::replace_standard_material,
+		set_material_time::set_material_time,
+	},
 };
 
 fn main() {
 	App::new()
 		.add_plugins((DefaultPlugins, MaterialPlugin::<CustomMaterial>::default()))
+		.init_resource::<CameraRotationSettings>()
+		.init_resource::<CameraZoomSettings>()
 		.add_systems(Startup, setup)
+		.add_systems(
+			Update,
+			cam_movement::<MouseMotion>.run_if(holding_button(MouseButton::Right)),
+		)
+		.add_systems(Update, cam_movement::<MouseWheel>)
 		.add_systems(Update, replace_standard_material)
-		.add_systems(Update, rotate_camera)
-		.add_systems(Update, zoom_camera)
-		.add_systems(Update, material_time)
+		.add_systems(Update, set_material_time)
 		.run();
 }
 
@@ -75,89 +85,4 @@ fn setup(
 		},
 		..default()
 	});
-}
-
-fn replace_standard_material(
-	mut commands: Commands,
-	replacements: Query<&ReplacementMaterial>,
-	materials: Query<Entity, Added<Handle<StandardMaterial>>>,
-	parents: Query<&Parent>,
-) {
-	let get_replacement = |entity| replacements.get(entity).ok();
-	let find_replacement = |entity| parents.iter_ancestors(entity).find_map(get_replacement);
-
-	for entity in &materials {
-		let Some(ReplacementMaterial(handle)) = find_replacement(entity) else {
-			continue;
-		};
-		let Some(mut entity) = commands.get_entity(entity) else {
-			continue;
-		};
-
-		entity.insert(handle.clone());
-		entity.remove::<Handle<StandardMaterial>>();
-	}
-}
-
-fn rotate_camera(
-	time: Res<Time<Real>>,
-	mut cams: Query<&mut Transform, With<Camera>>,
-	mut mouse_motion: EventReader<MouseMotion>,
-	mouse_input: Res<ButtonInput<MouseButton>>,
-) {
-	let Ok(mut cam) = cams.get_single_mut() else {
-		return;
-	};
-	let holding_right = mouse_input.pressed(MouseButton::Right);
-	let center = vec3(0.0, 0.5, 0.0);
-
-	for event in mouse_motion.read() {
-		if !holding_right {
-			continue;
-		}
-
-		let distance = (cam.translation - center).length();
-		cam.rotate_y(-event.delta.x * time.delta_seconds() * 0.5);
-		cam.rotate_local_x(-event.delta.y * time.delta_seconds() * 0.5);
-		cam.translation = center - cam.forward().as_vec3() * distance;
-	}
-}
-
-fn zoom_camera(
-	time: Res<Time<Real>>,
-	mut cams: Query<&mut Transform, With<Camera>>,
-	mut mouse_wheel: EventReader<MouseWheel>,
-) {
-	let Ok(mut cam) = cams.get_single_mut() else {
-		return;
-	};
-	let center = vec3(0.0, 0.5, 0.0);
-
-	for event in mouse_wheel.read() {
-		let Ok(change) = ZoomChange::try_from(event) else {
-			continue;
-		};
-
-		let distance = (cam.translation - center).length();
-		let change = *change
-			.scaled_by(10.)
-			.scaled_by(time.delta_seconds())
-			.scaled_by(distance);
-
-		let zoomed_distance = f32::max(3., distance + change);
-		cam.translation = center - cam.forward().as_vec3() * zoomed_distance;
-	}
-}
-
-fn material_time(
-	time: Res<Time<Real>>,
-	materials: Query<&Handle<CustomMaterial>>,
-	mut custom_materials: ResMut<Assets<CustomMaterial>>,
-) {
-	for handle in &materials {
-		let Some(material) = custom_materials.get_mut(handle) else {
-			continue;
-		};
-		material.time_secs = time.elapsed_seconds();
-	}
 }
