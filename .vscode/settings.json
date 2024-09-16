@@ -23,6 +23,7 @@
 		"editor.defaultFormatter": "wgsl-analyzer.wgsl-analyzer"
 	},
 	"cSpell.words": [
+		"consts",
 		"wgsl",
 		"zyheeda"
 	]
