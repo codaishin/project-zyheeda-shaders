@@ -1,14 +1,13 @@
 use bevy::{
 	color::palettes::css::{DARK_CYAN, WHITE},
 	input::mouse::{MouseMotion, MouseWheel},
-	math::vec3,
 	prelude::*,
 };
 use project_zyheeda_bevy_shaders::{
 	bundles::MaterialAssetBundle,
 	components::ReplacementMaterial,
 	material::CustomMaterial,
-	zoom_change::ZoomChange,
+	systems::cam_movement::cam_movement,
 };
 
 fn main() {
@@ -16,8 +15,8 @@ fn main() {
 		.add_plugins((DefaultPlugins, MaterialPlugin::<CustomMaterial>::default()))
 		.add_systems(Startup, setup)
 		.add_systems(Update, replace_standard_material)
-		.add_systems(Update, rotate_camera)
-		.add_systems(Update, zoom_camera)
+		.add_systems(Update, cam_movement::<MouseMotion>)
+		.add_systems(Update, cam_movement::<MouseWheel>)
 		.add_systems(Update, material_time)
 		.run();
 }
@@ -96,56 +95,6 @@ fn replace_standard_material(
 
 		entity.insert(handle.clone());
 		entity.remove::<Handle<StandardMaterial>>();
-	}
-}
-
-fn rotate_camera(
-	time: Res<Time<Real>>,
-	mut cams: Query<&mut Transform, With<Camera>>,
-	mut mouse_motion: EventReader<MouseMotion>,
-	mouse_input: Res<ButtonInput<MouseButton>>,
-) {
-	let Ok(mut cam) = cams.get_single_mut() else {
-		return;
-	};
-	let holding_right = mouse_input.pressed(MouseButton::Right);
-	let center = vec3(0.0, 0.5, 0.0);
-
-	for event in mouse_motion.read() {
-		if !holding_right {
-			continue;
-		}
-
-		let distance = (cam.translation - center).length();
-		cam.rotate_y(-event.delta.x * time.delta_seconds() * 0.5);
-		cam.rotate_local_x(-event.delta.y * time.delta_seconds() * 0.5);
-		cam.translation = center - cam.forward().as_vec3() * distance;
-	}
-}
-
-fn zoom_camera(
-	time: Res<Time<Real>>,
-	mut cams: Query<&mut Transform, With<Camera>>,
-	mut mouse_wheel: EventReader<MouseWheel>,
-) {
-	let Ok(mut cam) = cams.get_single_mut() else {
-		return;
-	};
-	let center = vec3(0.0, 0.5, 0.0);
-
-	for event in mouse_wheel.read() {
-		let Ok(change) = ZoomChange::try_from(event) else {
-			continue;
-		};
-
-		let distance = (cam.translation - center).length();
-		let change = *change
-			.scaled_by(10.)
-			.scaled_by(time.delta_seconds())
-			.scaled_by(distance);
-
-		let zoomed_distance = f32::max(3., distance + change);
-		cam.translation = center - cam.forward().as_vec3() * zoomed_distance;
 	}
 }
 
