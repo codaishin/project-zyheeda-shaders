@@ -8,7 +8,11 @@ use project_zyheeda_bevy_shaders::{
 	components::ReplacementMaterial,
 	material::CustomMaterial,
 	resources::{CameraRotationSettings, CameraZoomSettings},
-	systems::{cam_movement::cam_movement, holding_button::holding_button},
+	systems::{
+		cam_movement::cam_movement,
+		holding_button::holding_button,
+		set_material_time::set_material_time,
+	},
 };
 
 fn main() {
@@ -23,7 +27,7 @@ fn main() {
 			cam_movement::<MouseMotion>.run_if(holding_button(MouseButton::Right)),
 		)
 		.add_systems(Update, cam_movement::<MouseWheel>)
-		.add_systems(Update, material_time)
+		.add_systems(Update, set_material_time)
 		.run();
 }
 
@@ -101,18 +105,5 @@ fn replace_standard_material(
 
 		entity.insert(handle.clone());
 		entity.remove::<Handle<StandardMaterial>>();
-	}
-}
-
-fn material_time(
-	time: Res<Time<Real>>,
-	materials: Query<&Handle<CustomMaterial>>,
-	mut custom_materials: ResMut<Assets<CustomMaterial>>,
-) {
-	for handle in &materials {
-		let Some(material) = custom_materials.get_mut(handle) else {
-			continue;
-		};
-		material.time_secs = time.elapsed_seconds();
 	}
 }

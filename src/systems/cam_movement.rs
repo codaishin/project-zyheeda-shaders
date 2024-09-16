@@ -36,10 +36,13 @@ fn apply_event_transformations<TEvent>(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::traits::movement::{Anchor, Seconds};
+	use crate::{
+		tools::test_tools::tick_time,
+		traits::movement::{Anchor, Seconds},
+	};
 	use bevy::ecs::system::RunSystemOnce;
 	use mockall::{automock, predicate::eq};
-	use std::time::{Duration, Instant};
+	use std::time::Duration;
 
 	#[derive(Event)]
 	struct MyEvent {
@@ -71,12 +74,6 @@ mod tests {
 		) {
 			self.mock.anchored_movement(agent, around, delta, extra);
 		}
-	}
-
-	fn tick_time(app: &mut App, delta: Duration) {
-		let mut time = app.world_mut().resource_mut::<Time<Real>>();
-		let last_update = time.last_update().unwrap_or_else(Instant::now);
-		time.update_with_instant(last_update + delta);
 	}
 
 	fn setup() -> App {
