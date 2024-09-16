@@ -1,3 +1,6 @@
+mod mouse_motion;
+mod mouse_wheel;
+
 use bevy::{math::Vec3, prelude::*};
 
 pub struct Seconds(pub f32);
