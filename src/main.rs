@@ -7,7 +7,7 @@ use project_zyheeda_bevy_shaders::{
 	bundles::MaterialAssetBundle,
 	components::ReplacementMaterial,
 	material::CustomMaterial,
-	systems::cam_movement::cam_movement,
+	systems::{cam_movement::cam_movement, holding_button::holding_button},
 };
 
 fn main() {
@@ -15,7 +15,10 @@ fn main() {
 		.add_plugins((DefaultPlugins, MaterialPlugin::<CustomMaterial>::default()))
 		.add_systems(Startup, setup)
 		.add_systems(Update, replace_standard_material)
-		.add_systems(Update, cam_movement::<MouseMotion>)
+		.add_systems(
+			Update,
+			cam_movement::<MouseMotion>.run_if(holding_button(MouseButton::Right)),
+		)
 		.add_systems(Update, cam_movement::<MouseWheel>)
 		.add_systems(Update, material_time)
 		.run();
