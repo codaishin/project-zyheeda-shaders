@@ -30,7 +30,29 @@ mod tests {
 	use super::*;
 	use crate::traits::movement::{Anchor, Seconds};
 	use bevy::ecs::system::RunSystemOnce;
+	use mockall::{mock, predicate::eq};
 	use std::time::{Duration, Instant};
+
+	#[derive(Event)]
+	struct MyEvent {
+		mock: MockMyEvent,
+	}
+
+	impl MyEvent {
+		fn with_mock(mut setup: impl FnMut(&mut MockMyEvent)) -> Self {
+			let mut mock = MockMyEvent::default();
+			setup(&mut mock);
+
+			Self { mock }
+		}
+	}
+
+	#[automock]
+	impl AnchoredMovement for MyEvent {
+		fn anchored_movement(&self, agent: &mut Transform, around: Anchor, delta: Seconds) {
+			self.mock.anchored_movement(agent, around, delta);
+		}
+	}
 
 	fn tick_time(app: &mut App, delta: Duration) {
 		let mut time = app.world_mut().resource_mut::<Time<Real>>();
@@ -38,10 +60,10 @@ mod tests {
 		time.update_with_instant(last_update + delta);
 	}
 
-	fn setup<TEvent: Event>() -> App {
+	fn setup() -> App {
 		let mut app = App::new();
 		app.world_mut().init_resource::<Time<Real>>();
-		app.add_event::<TEvent>();
+		app.add_event::<MyEvent>();
 
 		tick_time(&mut app, Duration::ZERO);
 		app
@@ -49,109 +71,69 @@ mod tests {
 
 	#[test]
 	fn apply_anchored_movement() {
-		#[derive(Event)]
-		struct MyEvent;
-
-		static mut CALL_ARGS: Vec<(Transform, Anchor, Seconds)> = vec![];
-
-		impl AnchoredMovement for MyEvent {
-			fn anchored_movement(&self, agent: &mut Transform, anchor: Anchor, delta: Seconds) {
-				unsafe {
-					CALL_ARGS.push((*agent, anchor, delta));
-				}
-			}
-		}
-
-		let mut app = setup::<MyEvent>();
-		app.world_mut().spawn(Camera3dBundle {
-			transform: Transform::from_xyz(1., 2., 3.),
-			..default()
-		});
+		let mut app = setup();
+		app.world_mut()
+			.spawn((Transform::from_xyz(1., 2., 3.), Camera::default()));
 
 		tick_time(&mut app, Duration::from_secs(42));
-		app.world_mut().send_event(MyEvent);
+		app.world_mut().send_event(MyEvent::with_mock(assert));
 		app.world_mut().run_system_once(cam_movement::<MyEvent>);
 
-		assert_eq!(
-			vec![(
-				Transform::from_xyz(1., 2., 3.),
-				Anchor(Vec3::new(0., 0.5, 0.)),
-				Seconds(42.)
-			)],
-			unsafe { CALL_ARGS.clone() }
-		)
+		fn assert(mock: &mut MockMyEvent) {
+			mock.expect_anchored_movement()
+				.with(
+					eq(Transform::from_xyz(1., 2., 3.)),
+					eq(Anchor(Vec3::new(0., 0.5, 0.))),
+					eq(Seconds(42.)),
+				)
+				.times(1)
+				.return_const(());
+		}
 	}
 
 	#[test]
 	fn do_not_apply_anchored_movement_when_not_camera_present() {
-		#[derive(Event)]
-		struct MyEvent;
-
-		static mut CALL_ARGS: Vec<(Transform, Anchor, Seconds)> = vec![];
-
-		impl AnchoredMovement for MyEvent {
-			fn anchored_movement(&self, agent: &mut Transform, anchor: Anchor, delta: Seconds) {
-				unsafe {
-					CALL_ARGS.push((*agent, anchor, delta));
-				}
-			}
-		}
-
-		let mut app = setup::<MyEvent>();
+		let mut app = setup();
 		app.world_mut().spawn(Transform::from_xyz(1., 2., 3.));
 
 		tick_time(&mut app, Duration::from_secs(42));
-		app.world_mut().send_event(MyEvent);
+		app.world_mut().send_event(MyEvent::with_mock(assert));
 		app.world_mut().run_system_once(cam_movement::<MyEvent>);
 
-		assert_eq!(vec![] as Vec<(Transform, Anchor, Seconds)>, unsafe {
-			CALL_ARGS.clone()
-		})
+		fn assert(mock: &mut MockMyEvent) {
+			mock.expect_anchored_movement().never().return_const(());
+		}
 	}
 
 	#[test]
 	fn apply_anchored_movement_for_multiple_cameras() {
-		#[derive(Event)]
-		struct MyEvent;
-
-		static mut CALL_ARGS: Vec<(Transform, Anchor, Seconds)> = vec![];
-
-		impl AnchoredMovement for MyEvent {
-			fn anchored_movement(&self, agent: &mut Transform, anchor: Anchor, delta: Seconds) {
-				unsafe {
-					CALL_ARGS.push((*agent, anchor, delta));
-				}
-			}
-		}
-
-		let mut app = setup::<MyEvent>();
-		app.world_mut().spawn(Camera3dBundle {
-			transform: Transform::from_xyz(1., 2., 3.),
-			..default()
-		});
-		app.world_mut().spawn(Camera3dBundle {
-			transform: Transform::from_xyz(4., 5., 6.),
-			..default()
-		});
+		let mut app = setup();
+		app.world_mut()
+			.spawn((Transform::from_xyz(1., 2., 3.), Camera::default()));
+		app.world_mut()
+			.spawn((Transform::from_xyz(4., 5., 6.), Camera::default()));
 
 		tick_time(&mut app, Duration::from_secs(11));
-		app.world_mut().send_event(MyEvent);
+		app.world_mut().send_event(MyEvent::with_mock(assert));
 		app.world_mut().run_system_once(cam_movement::<MyEvent>);
 
-		assert_eq!(
-			vec![
-				(
-					Transform::from_xyz(1., 2., 3.),
-					Anchor(Vec3::new(0., 0.5, 0.)),
-					Seconds(11.)
-				),
-				(
-					Transform::from_xyz(4., 5., 6.),
-					Anchor(Vec3::new(0., 0.5, 0.)),
-					Seconds(11.)
+		fn assert(mock: &mut MockMyEvent) {
+			mock.expect_anchored_movement()
+				.with(
+					eq(Transform::from_xyz(1., 2., 3.)),
+					eq(Anchor(Vec3::new(0., 0.5, 0.))),
+					eq(Seconds(11.)),
 				)
-			],
-			unsafe { CALL_ARGS.clone() }
-		)
+				.times(1)
+				.return_const(());
+			mock.expect_anchored_movement()
+				.with(
+					eq(Transform::from_xyz(4., 5., 6.)),
+					eq(Anchor(Vec3::new(0., 0.5, 0.))),
+					eq(Seconds(11.)),
+				)
+				.times(1)
+				.return_const(());
+		}
 	}
 }
