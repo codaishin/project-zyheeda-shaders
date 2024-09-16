@@ -1,9 +1,5 @@
 use bevy::{
-	asset::{Asset, Handle},
-	color::LinearRgba,
-	pbr::Material,
-	prelude::{AlphaMode, Image},
-	reflect::TypePath,
+	prelude::*,
 	render::render_resource::{AsBindGroup, ShaderRef},
 };
 
