@@ -16,11 +16,11 @@ pub struct CustomMaterial {
 }
 
 impl Material for CustomMaterial {
-	fn fragment_shader() -> ShaderRef {
+	fn vertex_shader() -> ShaderRef {
 		"shaders/custom_material.wgsl".into()
 	}
 
-	fn vertex_shader() -> ShaderRef {
+	fn fragment_shader() -> ShaderRef {
 		"shaders/custom_material.wgsl".into()
 	}
 
