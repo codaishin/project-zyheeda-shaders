@@ -53,7 +53,7 @@ fn setup(
 	let material = custom_materials.add(CustomMaterial {
 		color: DARK_CYAN.into(),
 		alpha_mode: AlphaMode::Blend,
-		color_texture: Some(asset_server.load("textures/bubbles.png")),
+		color_texture: Some(asset_server.load("textures/grid.png")),
 		..default()
 	});
 
