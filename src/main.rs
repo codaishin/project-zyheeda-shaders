@@ -53,6 +53,7 @@ fn setup(
 	let material = custom_materials.add(CustomMaterial {
 		color: DARK_CYAN.into(),
 		alpha_mode: AlphaMode::Blend,
+		color_texture: Some(asset_server.load("textures/bubbles.png")),
 		..default()
 	});
 
@@ -63,10 +64,10 @@ fn setup(
 		..default()
 	});
 
-	commands.spawn(MaterialMeshBundle {
-		mesh: meshes.add(Sphere::default()),
+	commands.spawn(MaterialAssetBundle {
+		asset: asset_server.load("models/sphere.glb#Scene0"),
 		transform: Transform::from_translation(rotation_center + Vec3::X * 1.),
-		material: material.clone(),
+		material: ReplacementMaterial(material.clone()),
 		..default()
 	});
 
