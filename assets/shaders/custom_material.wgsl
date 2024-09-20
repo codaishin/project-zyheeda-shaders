@@ -11,6 +11,11 @@
 @group(2) @binding(2) var material_color_texture: texture_2d<f32>;
 @group(2) @binding(3) var material_color_sampler: sampler;
 
+struct DistortParams {
+    falloff: f32,
+    intensity: f32,
+}
+
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {
     let world = get_world_from_local(vertex.instance_index);
@@ -26,14 +31,24 @@ fn vertex(vertex: Vertex) -> VertexOutput {
 
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
-    // copied and simplified from fresnel example of https://github.com/rust-adventure/bevy-examples
-    let intensity = 6.0;
-    let falloff = 7.0;
+    var distort_params: DistortParams;
+    distort_params.falloff = 3.;
+    distort_params.intensity = 2.;
 
+    var fresnel = fresnel(mesh);
+    fresnel = distort(fresnel, distort_params);
+
+    return vec4(material_color.rgb, fresnel);
+}
+
+fn fresnel(mesh: VertexOutput) -> f32 {
+    // concept taken from fresnel example in https://github.com/rust-adventure/bevy-examples
     let normal = normalize(mesh.world_normal);
     let view_vector = normalize(view.world_position.xyz - mesh.world_position.xyz);
     let normalized_angle = dot(normal, view_vector);
-    let raw_fresnel = clamp(1.0 - normalized_angle, 0.0, 1.0);
-    let fresnel = pow(raw_fresnel, falloff) * intensity;
-    return  vec4(material_color.xyz * 100., mix(0., 1., fresnel)) * textureSample(material_color_texture, material_color_sampler, mesh.uv);
+    return clamp(1.0 - normalized_angle, 0.0, 1.0);
+}
+
+fn distort(value: f32, params: DistortParams) -> f32 {
+    return pow(value, params.falloff) * params.intensity;
 }

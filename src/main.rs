@@ -53,7 +53,7 @@ fn setup(
 
 	let rotation_center = Vec3::new(0.0, 0.5, 0.0);
 	let material = custom_materials.add(CustomMaterial {
-		color: DARK_CYAN.into(),
+		color: (DARK_CYAN * 100.).into(),
 		alpha_mode: AlphaMode::Blend,
 		color_texture: Some(asset_server.load("textures/grid.png")),
 		..default()
