@@ -1,10 +1,10 @@
 use crate::material::CustomMaterial;
 use bevy::prelude::*;
 
-pub fn set_material_time(
+pub fn set_material_time<T: TypePath + Sync + Send + 'static>(
 	time: Res<Time<Real>>,
-	materials: Query<&Handle<CustomMaterial>>,
-	mut custom_materials: ResMut<Assets<CustomMaterial>>,
+	materials: Query<&Handle<CustomMaterial<T>>>,
+	mut custom_materials: ResMut<Assets<CustomMaterial<T>>>,
 ) {
 	for handle in &materials {
 		let Some(material) = custom_materials.get_mut(handle) else {
@@ -26,9 +26,12 @@ mod tests {
 	};
 	use std::time::Duration;
 
+	#[derive(TypePath, Clone, Default)]
+	struct _T;
+
 	fn setup() -> App {
 		let mut app = App::new();
-		app.init_resource::<Assets<CustomMaterial>>();
+		app.init_resource::<Assets<CustomMaterial<_T>>>();
 		app.init_resource::<Time<Real>>();
 
 		tick_time(&mut app, Duration::ZERO);
@@ -38,16 +41,16 @@ mod tests {
 	#[test]
 	fn set_elapsed_time() {
 		let mut app = setup();
-		let mut materials = app.world_mut().resource_mut::<Assets<CustomMaterial>>();
+		let mut materials = app.world_mut().resource_mut::<Assets<CustomMaterial<_T>>>();
 		let material = materials.add(CustomMaterial::default());
 		app.world_mut().spawn(material.clone());
 
 		tick_time(&mut app, Duration::from_secs(1));
 		tick_time(&mut app, Duration::from_secs(2));
 		tick_time(&mut app, Duration::from_secs(3));
-		app.world_mut().run_system_once(set_material_time);
+		app.world_mut().run_system_once(set_material_time::<_T>);
 
-		let materials = app.world_mut().resource::<Assets<CustomMaterial>>();
+		let materials = app.world_mut().resource::<Assets<CustomMaterial<_T>>>();
 		let material = materials.get(material.id()).unwrap();
 		assert_eq!(6., material.time_secs);
 	}
