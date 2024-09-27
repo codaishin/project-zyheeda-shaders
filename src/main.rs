@@ -1,5 +1,5 @@
 use bevy::{
-	color::palettes::css::{DARK_CYAN, WHITE},
+	color::palettes::css::{DARK_CYAN, DARK_RED, WHITE},
 	input::mouse::{MouseMotion, MouseWheel},
 	prelude::*,
 };
@@ -9,7 +9,7 @@ use project_zyheeda_bevy_shaders::{
 		camera_label::{CameraLabel, FirstPass, FirstPassTexture, SecondPass, Ui},
 		toggle_visibility::ToggleVisibility,
 	},
-	material::{CustomMaterial, DistortionMaterial},
+	material::{CustomMaterial, DistortionMaterial, WiggleFast, WiggleSlow},
 	resources::{
 		render_target_image::RenderTargetImage,
 		window_size::WindowSize,
@@ -23,7 +23,8 @@ fn main() {
 	App::new()
 		.add_plugins((
 			DefaultPlugins,
-			MaterialPlugin::<CustomMaterial>::default(),
+			MaterialPlugin::<CustomMaterial<WiggleSlow>>::default(),
+			MaterialPlugin::<CustomMaterial<WiggleFast>>::default(),
 			MaterialPlugin::<DistortionMaterial> {
 				shadows_enabled: false,
 				..default()
@@ -57,7 +58,8 @@ fn main() {
 		.add_systems(
 			Update,
 			(
-				ApplyMaterial::<CustomMaterial>::system,
+				ApplyMaterial::<CustomMaterial<WiggleSlow>>::system,
+				ApplyMaterial::<CustomMaterial<WiggleFast>>::system,
 				ApplyMaterial::<DistortionMaterial>::system,
 			),
 		)
@@ -68,20 +70,29 @@ fn main() {
 		.run();
 }
 
+#[allow(clippy::too_many_arguments)]
 fn setup(
 	In(render_target): In<RenderTargetImage>,
 	mut commands: Commands,
 	mut meshes: ResMut<Assets<Mesh>>,
 	mut standard_materials: ResMut<Assets<StandardMaterial>>,
-	mut custom_materials: ResMut<Assets<CustomMaterial>>,
+	mut custom_materials_slow: ResMut<Assets<CustomMaterial<WiggleSlow>>>,
+	mut custom_materials_fast: ResMut<Assets<CustomMaterial<WiggleFast>>>,
 	mut distortion_materials: ResMut<Assets<DistortionMaterial>>,
 	asset_server: Res<AssetServer>,
 ) {
 	let rotation_center = Vec3::new(0.0, 0.5, 0.0);
-	let custom_material = custom_materials.add(CustomMaterial {
+	let material_slow = custom_materials_slow.add(CustomMaterial::<WiggleSlow> {
 		color: DARK_CYAN.into(),
 		alpha_mode: AlphaMode::Blend,
 		color_texture: Some(asset_server.load("textures/grid.png")),
+		..default()
+	});
+	let material_fast = custom_materials_fast.add(CustomMaterial::<WiggleFast> {
+		color: DARK_RED.into(),
+		alpha_mode: AlphaMode::Blend,
+		color_texture: Some(asset_server.load("textures/grid.png")),
+		..default()
 	});
 	let distortion_material = distortion_materials.add(DistortionMaterial {
 		first_pass: render_target.image.clone(),
@@ -98,14 +109,16 @@ fn setup(
 
 	commands.spawn((
 		SceneRoot(asset_server.load("models/shield.glb#Scene0")),
-		ApplyMaterial(custom_material.clone()),
+		ApplyMaterial(material_slow.clone()),
+		ApplyMaterial(material_fast.clone()),
 		ApplyMaterial(distortion_material.clone()),
 		Transform::from_translation(rotation_center - Vec3::X * 1.),
 	));
 
 	commands.spawn((
 		SceneRoot(asset_server.load("models/sphere.glb#Scene0")),
-		ApplyMaterial(custom_material.clone()),
+		ApplyMaterial(material_slow.clone()),
+		ApplyMaterial(material_fast.clone()),
 		ApplyMaterial(distortion_material.clone()),
 		Transform::from_translation(rotation_center + Vec3::X * 1.),
 	));
