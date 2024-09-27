@@ -24,9 +24,11 @@ fn main() {
 		.add_systems(Startup, setup)
 		.add_systems(
 			Update,
-			cam_movement::<MouseMotion>.run_if(holding_button(MouseButton::Right)),
+			(
+				cam_movement::<MouseMotion>.run_if(holding_button(MouseButton::Right)),
+				cam_movement::<MouseWheel>,
+			),
 		)
-		.add_systems(Update, cam_movement::<MouseWheel>)
 		.add_systems(Update, replace_standard_material)
 		.add_systems(Update, set_material_time)
 		.run();
