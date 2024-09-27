@@ -1,11 +1,10 @@
-use bevy::prelude::*;
-
 use crate::components::ReplacementMaterial;
+use bevy::prelude::*;
 
 pub fn replace_standard_material(
 	mut commands: Commands,
 	replacements: Query<&ReplacementMaterial>,
-	materials: Query<Entity>,
+	materials: Query<Entity, With<Handle<StandardMaterial>>>,
 	parents: Query<&Parent>,
 ) {
 	let get_replacement = |entity| replacements.get(entity).ok();
@@ -56,6 +55,22 @@ mod tests {
 
 		let child = app.world().entity(child);
 		assert_eq!(Some(&replacement), child.get::<Handle<CustomMaterial>>())
+	}
+
+	#[test]
+	fn do_not_set_replacement_material_when_no_standard_material() {
+		let mut app = setup();
+		let replacement = new_handle::<CustomMaterial>();
+		let parent = app
+			.world_mut()
+			.spawn(ReplacementMaterial(replacement.clone()))
+			.id();
+		let child = app.world_mut().spawn_empty().set_parent(parent).id();
+
+		app.world_mut().run_system_once(replace_standard_material);
+
+		let child = app.world().entity(child);
+		assert_eq!(None, child.get::<Handle<CustomMaterial>>())
 	}
 
 	#[test]
