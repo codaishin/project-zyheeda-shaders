@@ -1,6 +1,6 @@
 use crate::{
 	components::ReplacementMaterial,
-	material::{WiggleFast, WiggleSlow},
+	material::{WiggleFast, WiggleFaster, WiggleSlow},
 };
 use bevy::prelude::*;
 
@@ -9,6 +9,7 @@ pub struct MaterialAssetBundle {
 	pub asset: Handle<Scene>,
 	pub material_slow: ReplacementMaterial<WiggleSlow>,
 	pub material_fast: ReplacementMaterial<WiggleFast>,
+	pub material_faster: ReplacementMaterial<WiggleFaster>,
 	pub transform: Transform,
 	pub global_transform: GlobalTransform,
 	pub visibility: Visibility,

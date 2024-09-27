@@ -38,11 +38,18 @@ fn vertex_slow(vertex: Vertex) -> VertexOutput {
 @vertex
 fn vertex_fast(vertex: Vertex) -> VertexOutput {
     var out = vertex(vertex);
-    out.position = wiggle(out.position, 10., 0.1, 10.);
+    out.position = wiggle(out.position, 10., 0.1, 2.);
+    return out;
+}
+
+@vertex
+fn vertex_faster(vertex: Vertex) -> VertexOutput {
+    var out = vertex(vertex);
+    out.position = wiggle(out.position, 10., 0.1, 4.);
     return out;
 }
 
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
-    return material_color * textureSample(material_color_texture, material_color_sampler, mesh.uv);
+    return vec4(material_color.rgb, 0.3) * textureSample(material_color_texture, material_color_sampler, mesh.uv);
 }

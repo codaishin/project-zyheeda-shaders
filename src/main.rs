@@ -1,12 +1,12 @@
 use bevy::{
-	color::palettes::css::{DARK_CYAN, DARK_RED, WHITE},
+	color::palettes::css::{BLUE, GREEN, RED, WHITE},
 	input::mouse::{MouseMotion, MouseWheel},
 	prelude::*,
 };
 use project_zyheeda_bevy_shaders::{
 	bundles::MaterialAssetBundle,
 	components::ReplacementMaterial,
-	material::{CustomMaterial, WiggleFast, WiggleSlow},
+	material::{CustomMaterial, WiggleFast, WiggleFaster, WiggleSlow},
 	resources::{CameraRotationSettings, CameraZoomSettings},
 	systems::{
 		cam_movement::cam_movement,
@@ -22,6 +22,7 @@ fn main() {
 			DefaultPlugins,
 			MaterialPlugin::<CustomMaterial<WiggleSlow>>::default(),
 			MaterialPlugin::<CustomMaterial<WiggleFast>>::default(),
+			MaterialPlugin::<CustomMaterial<WiggleFaster>>::default(),
 		))
 		.init_resource::<CameraRotationSettings>()
 		.init_resource::<CameraZoomSettings>()
@@ -38,6 +39,7 @@ fn main() {
 			(
 				replace_standard_material::<WiggleSlow>,
 				replace_standard_material::<WiggleFast>,
+				replace_standard_material::<WiggleFaster>,
 			),
 		)
 		.add_systems(
@@ -45,6 +47,7 @@ fn main() {
 			(
 				set_material_time::<WiggleSlow>,
 				set_material_time::<WiggleFast>,
+				set_material_time::<WiggleFaster>,
 			),
 		)
 		.run();
@@ -56,6 +59,7 @@ fn setup(
 	mut standard_materials: ResMut<Assets<StandardMaterial>>,
 	mut custom_materials_slow: ResMut<Assets<CustomMaterial<WiggleSlow>>>,
 	mut custom_materials_fast: ResMut<Assets<CustomMaterial<WiggleFast>>>,
+	mut custom_materials_faster: ResMut<Assets<CustomMaterial<WiggleFaster>>>,
 	asset_server: Res<AssetServer>,
 ) {
 	commands.spawn(MaterialMeshBundle {
@@ -70,13 +74,19 @@ fn setup(
 
 	let rotation_center = Vec3::new(0.0, 0.5, 0.0);
 	let material_slow = custom_materials_slow.add(CustomMaterial::<WiggleSlow> {
-		color: DARK_CYAN.into(),
+		color: RED.into(),
 		alpha_mode: AlphaMode::Blend,
 		color_texture: Some(asset_server.load("textures/grid.png")),
 		..default()
 	});
 	let material_fast = custom_materials_fast.add(CustomMaterial::<WiggleFast> {
-		color: DARK_RED.into(),
+		color: GREEN.into(),
+		alpha_mode: AlphaMode::Blend,
+		color_texture: Some(asset_server.load("textures/grid.png")),
+		..default()
+	});
+	let material_faster = custom_materials_faster.add(CustomMaterial::<WiggleFaster> {
+		color: BLUE.into(),
 		alpha_mode: AlphaMode::Blend,
 		color_texture: Some(asset_server.load("textures/grid.png")),
 		..default()
@@ -87,6 +97,7 @@ fn setup(
 		transform: Transform::from_translation(rotation_center - Vec3::X * 1.),
 		material_slow: ReplacementMaterial(material_slow.clone()),
 		material_fast: ReplacementMaterial(material_fast.clone()),
+		material_faster: ReplacementMaterial(material_faster.clone()),
 		..default()
 	});
 
@@ -95,6 +106,7 @@ fn setup(
 		transform: Transform::from_translation(rotation_center + Vec3::X * 1.),
 		material_slow: ReplacementMaterial(material_slow.clone()),
 		material_fast: ReplacementMaterial(material_fast.clone()),
+		material_faster: ReplacementMaterial(material_faster.clone()),
 		..default()
 	});
 

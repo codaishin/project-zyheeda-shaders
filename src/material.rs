@@ -19,6 +19,9 @@ pub struct WiggleSlow;
 #[derive(TypePath, Clone, Default)]
 pub struct WiggleFast;
 
+#[derive(TypePath, Clone, Default)]
+pub struct WiggleFaster;
+
 #[derive(Asset, TypePath, AsBindGroup, Clone, Default)]
 pub struct CustomMaterial<T: TypePath + Sync + Send + 'static> {
 	#[uniform(0)]
@@ -76,6 +79,30 @@ impl Material for CustomMaterial<WiggleFast> {
 		_: MaterialPipelineKey<Self>,
 	) -> Result<(), SpecializedMeshPipelineError> {
 		descriptor.vertex.entry_point = "vertex_fast".into();
+		Ok(())
+	}
+}
+
+impl Material for CustomMaterial<WiggleFaster> {
+	fn vertex_shader() -> ShaderRef {
+		"shaders/custom_material.wgsl".into()
+	}
+
+	fn fragment_shader() -> ShaderRef {
+		"shaders/custom_material.wgsl".into()
+	}
+
+	fn alpha_mode(&self) -> AlphaMode {
+		self.alpha_mode
+	}
+
+	fn specialize(
+		_: &MaterialPipeline<Self>,
+		descriptor: &mut RenderPipelineDescriptor,
+		_: &MeshVertexBufferLayoutRef,
+		_: MaterialPipelineKey<Self>,
+	) -> Result<(), SpecializedMeshPipelineError> {
+		descriptor.vertex.entry_point = "vertex_faster".into();
 		Ok(())
 	}
 }
