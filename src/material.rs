@@ -10,10 +10,14 @@ use bevy::{
 #[derive(Asset, TypePath, AsBindGroup, Clone, Default)]
 pub struct CustomMaterial {
 	#[uniform(0)]
-	pub color: LinearRgba,
+	pub material_color: LinearRgba,
 	#[texture(1)]
 	#[sampler(2)]
 	pub color_texture: Option<Handle<Image>>,
+	#[uniform(3)]
+	pub fill_color: LinearRgba,
+	#[uniform(4)]
+	pub shine: LinearRgba,
 	pub alpha_mode: AlphaMode,
 }
 

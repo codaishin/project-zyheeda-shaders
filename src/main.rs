@@ -1,5 +1,5 @@
 use bevy::{
-	color::palettes::css::{DARK_CYAN, WHITE},
+	color::palettes::css::{DARK_CYAN, LIGHT_CYAN, RED, WHITE},
 	input::mouse::{MouseMotion, MouseWheel},
 	prelude::*,
 };
@@ -79,7 +79,9 @@ fn setup(
 ) {
 	let rotation_center = Vec3::new(0.0, 0.5, 0.0);
 	let custom_material = custom_materials.add(CustomMaterial {
-		color: DARK_CYAN.into(),
+		material_color: LIGHT_CYAN.into(),
+		fill_color: DARK_CYAN.into(),
+		shine: (RED * 10.).into(),
 		alpha_mode: AlphaMode::Blend,
 		color_texture: Some(asset_server.load("textures/grid.png")),
 	});
