@@ -4,7 +4,6 @@ use bevy::{
 	prelude::*,
 };
 use project_zyheeda_bevy_shaders::{
-	bundles::MaterialAssetBundle,
 	components::ReplacementMaterial,
 	material::CustomMaterial,
 	resources::{CameraRotationSettings, CameraZoomSettings},
@@ -41,15 +40,13 @@ fn setup(
 	mut custom_materials: ResMut<Assets<CustomMaterial>>,
 	asset_server: Res<AssetServer>,
 ) {
-	commands.spawn(MaterialMeshBundle {
-		mesh: meshes.add(Plane3d::new(Vec3::Y, Vec2::new(5., 5.))),
-		transform: Transform::from_xyz(0.0, 0.0, 0.0),
-		material: standard_materials.add(StandardMaterial {
+	commands.spawn((
+		Mesh3d(meshes.add(Plane3d::new(Vec3::Y, Vec2::new(5., 5.)))),
+		MeshMaterial3d(standard_materials.add(StandardMaterial {
 			base_color: Color::WHITE,
 			..default()
-		}),
-		..default()
-	});
+		})),
+	));
 
 	let rotation_center = Vec3::new(0.0, 0.5, 0.0);
 	let material = custom_materials.add(CustomMaterial {
@@ -59,33 +56,30 @@ fn setup(
 		..default()
 	});
 
-	commands.spawn(MaterialAssetBundle {
-		asset: asset_server.load("models/shield.glb#Scene0"),
-		transform: Transform::from_translation(rotation_center - Vec3::X * 1.),
-		material: ReplacementMaterial(material.clone()),
-		..default()
-	});
+	commands.spawn((
+		SceneRoot(asset_server.load("models/shield.glb#Scene0")),
+		ReplacementMaterial(material.clone()),
+		Transform::from_translation(rotation_center - Vec3::X * 1.),
+	));
 
-	commands.spawn(MaterialAssetBundle {
-		asset: asset_server.load("models/sphere.glb#Scene0"),
-		transform: Transform::from_translation(rotation_center + Vec3::X * 1.),
-		material: ReplacementMaterial(material.clone()),
-		..default()
-	});
+	commands.spawn((
+		SceneRoot(asset_server.load("models/sphere.glb#Scene0")),
+		ReplacementMaterial(material.clone()),
+		Transform::from_translation(rotation_center + Vec3::X * 1.),
+	));
 
-	commands.spawn(Camera3dBundle {
-		transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(rotation_center, Vec3::Y),
-		..default()
-	});
+	commands.spawn((
+		Camera3d::default(),
+		Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(rotation_center, Vec3::Y),
+	));
 
-	commands.spawn(PointLightBundle {
-		transform: Transform::from_xyz(5., 5., 5.),
-		point_light: PointLight {
+	commands.spawn((
+		PointLight {
 			color: WHITE.into(),
 			shadows_enabled: false,
 			intensity: 2_000_000.0,
 			..default()
 		},
-		..default()
-	});
+		Transform::from_xyz(5., 5., 5.),
+	));
 }

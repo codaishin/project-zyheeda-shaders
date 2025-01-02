@@ -11,7 +11,7 @@ pub fn cam_movement<TEvent>(
 	TEvent::TExtra: Resource + Copy,
 {
 	let around = Anchor(Vec3::new(0., 0.5, 0.));
-	let delta = Seconds(time.delta_seconds());
+	let delta = Seconds(time.delta_secs());
 
 	for event in events.read() {
 		apply_event_transformations(&mut cameras, event, around, delta, *extra);
@@ -40,7 +40,7 @@ mod tests {
 		tools::test_tools::tick_time,
 		traits::movement::{Anchor, Seconds},
 	};
-	use bevy::ecs::system::RunSystemOnce;
+	use bevy::ecs::system::{RunSystemError, RunSystemOnce};
 	use mockall::{automock, predicate::eq};
 	use std::time::Duration;
 
@@ -87,14 +87,14 @@ mod tests {
 	}
 
 	#[test]
-	fn apply_anchored_movement() {
+	fn apply_anchored_movement() -> Result<(), RunSystemError> {
 		let mut app = setup();
 		app.world_mut()
 			.spawn((Transform::from_xyz(1., 2., 3.), Camera::default()));
 
 		tick_time(&mut app, Duration::from_secs(42));
 		app.world_mut().send_event(MyEvent::with_mock(assert));
-		app.world_mut().run_system_once(cam_movement::<MyEvent>);
+		app.world_mut().run_system_once(cam_movement::<MyEvent>)?;
 
 		fn assert(mock: &mut MockMyEvent) {
 			mock.expect_anchored_movement()
@@ -107,24 +107,26 @@ mod tests {
 				.times(1)
 				.return_const(());
 		}
+		Ok(())
 	}
 
 	#[test]
-	fn do_not_apply_anchored_movement_when_not_camera_present() {
+	fn do_not_apply_anchored_movement_when_not_camera_present() -> Result<(), RunSystemError> {
 		let mut app = setup();
 		app.world_mut().spawn(Transform::from_xyz(1., 2., 3.));
 
 		tick_time(&mut app, Duration::from_secs(42));
 		app.world_mut().send_event(MyEvent::with_mock(assert));
-		app.world_mut().run_system_once(cam_movement::<MyEvent>);
+		app.world_mut().run_system_once(cam_movement::<MyEvent>)?;
 
 		fn assert(mock: &mut MockMyEvent) {
 			mock.expect_anchored_movement().never().return_const(());
 		}
+		Ok(())
 	}
 
 	#[test]
-	fn apply_anchored_movement_for_multiple_cameras() {
+	fn apply_anchored_movement_for_multiple_cameras() -> Result<(), RunSystemError> {
 		let mut app = setup();
 		app.world_mut()
 			.spawn((Transform::from_xyz(1., 2., 3.), Camera::default()));
@@ -133,7 +135,7 @@ mod tests {
 
 		tick_time(&mut app, Duration::from_secs(11));
 		app.world_mut().send_event(MyEvent::with_mock(assert));
-		app.world_mut().run_system_once(cam_movement::<MyEvent>);
+		app.world_mut().run_system_once(cam_movement::<MyEvent>)?;
 
 		fn assert(mock: &mut MockMyEvent) {
 			mock.expect_anchored_movement()
@@ -155,5 +157,6 @@ mod tests {
 				.times(1)
 				.return_const(());
 		}
+		Ok(())
 	}
 }

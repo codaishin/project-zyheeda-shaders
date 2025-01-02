@@ -4,7 +4,7 @@ use bevy::prelude::*;
 pub fn replace_standard_material(
 	mut commands: Commands,
 	replacements: Query<&ReplacementMaterial>,
-	materials: Query<Entity, With<Handle<StandardMaterial>>>,
+	materials: Query<Entity, With<MeshMaterial3d<StandardMaterial>>>,
 	parents: Query<&Parent>,
 ) {
 	let get_replacement = |entity| replacements.get(entity).ok();
@@ -18,8 +18,8 @@ pub fn replace_standard_material(
 			continue;
 		};
 
-		entity.insert(handle.clone());
-		entity.remove::<Handle<StandardMaterial>>();
+		entity.insert(MeshMaterial3d(handle.clone()));
+		entity.remove::<MeshMaterial3d<StandardMaterial>>();
 	}
 }
 
@@ -27,7 +27,7 @@ pub fn replace_standard_material(
 mod tests {
 	use super::*;
 	use crate::{components::ReplacementMaterial, material::CustomMaterial};
-	use bevy::{app::App, ecs::system::RunSystemOnce};
+	use bevy::ecs::system::{RunSystemError, RunSystemOnce};
 	use uuid::Uuid;
 
 	fn setup() -> App {
@@ -41,9 +41,9 @@ mod tests {
 	}
 
 	#[test]
-	fn set_replacement_material() {
+	fn set_replacement_material() -> Result<(), RunSystemError> {
 		let mut app = setup();
-		let material = new_handle::<StandardMaterial>();
+		let material = MeshMaterial3d(new_handle::<StandardMaterial>());
 		let replacement = new_handle::<CustomMaterial>();
 		let parent = app
 			.world_mut()
@@ -51,14 +51,20 @@ mod tests {
 			.id();
 		let child = app.world_mut().spawn(material).set_parent(parent).id();
 
-		app.world_mut().run_system_once(replace_standard_material);
+		app.world_mut().run_system_once(replace_standard_material)?;
 
-		let child = app.world().entity(child);
-		assert_eq!(Some(&replacement), child.get::<Handle<CustomMaterial>>())
+		assert_eq!(
+			Some(&replacement),
+			app.world()
+				.entity(child)
+				.get::<MeshMaterial3d<CustomMaterial>>()
+				.map(|MeshMaterial3d(handle)| handle)
+		);
+		Ok(())
 	}
 
 	#[test]
-	fn do_not_set_replacement_material_when_no_standard_material() {
+	fn do_not_set_replacement_material_when_no_standard_material() -> Result<(), RunSystemError> {
 		let mut app = setup();
 		let replacement = new_handle::<CustomMaterial>();
 		let parent = app
@@ -67,31 +73,43 @@ mod tests {
 			.id();
 		let child = app.world_mut().spawn_empty().set_parent(parent).id();
 
-		app.world_mut().run_system_once(replace_standard_material);
+		app.world_mut().run_system_once(replace_standard_material)?;
 
-		let child = app.world().entity(child);
-		assert_eq!(None, child.get::<Handle<CustomMaterial>>())
+		assert_eq!(
+			None,
+			app.world()
+				.entity(child)
+				.get::<MeshMaterial3d<CustomMaterial>>()
+				.map(|MeshMaterial3d(handle)| handle)
+		);
+		Ok(())
 	}
 
 	#[test]
-	fn do_not_set_replacement_material_when_not_parent() {
+	fn do_not_set_replacement_material_when_not_parent() -> Result<(), RunSystemError> {
 		let mut app = setup();
-		let material = new_handle::<StandardMaterial>();
+		let material = MeshMaterial3d(new_handle::<StandardMaterial>());
 		let replacement = new_handle::<CustomMaterial>();
 		app.world_mut()
 			.spawn(ReplacementMaterial(replacement.clone()));
 		let material = app.world_mut().spawn(material).id();
 
-		app.world_mut().run_system_once(replace_standard_material);
+		app.world_mut().run_system_once(replace_standard_material)?;
 
-		let material = app.world().entity(material);
-		assert_eq!(None, material.get::<Handle<CustomMaterial>>())
+		assert_eq!(
+			None,
+			app.world()
+				.entity(material)
+				.get::<MeshMaterial3d<CustomMaterial>>()
+				.map(|MeshMaterial3d(handle)| handle)
+		);
+		Ok(())
 	}
 
 	#[test]
-	fn set_replacement_material_of_nth_parent() {
+	fn set_replacement_material_of_nth_parent() -> Result<(), RunSystemError> {
 		let mut app = setup();
-		let material = new_handle::<StandardMaterial>();
+		let material = MeshMaterial3d(new_handle::<StandardMaterial>());
 		let replacement = new_handle::<CustomMaterial>();
 		let parent = app
 			.world_mut()
@@ -100,19 +118,22 @@ mod tests {
 		let child = app.world_mut().spawn_empty().set_parent(parent).id();
 		let child_child = app.world_mut().spawn(material).set_parent(child).id();
 
-		app.world_mut().run_system_once(replace_standard_material);
+		app.world_mut().run_system_once(replace_standard_material)?;
 
-		let child_child = app.world().entity(child_child);
 		assert_eq!(
 			Some(&replacement),
-			child_child.get::<Handle<CustomMaterial>>()
-		)
+			app.world()
+				.entity(child_child)
+				.get::<MeshMaterial3d<CustomMaterial>>()
+				.map(|MeshMaterial3d(handle)| handle)
+		);
+		Ok(())
 	}
 
 	#[test]
-	fn remove_standard_material() {
+	fn remove_standard_material() -> Result<(), RunSystemError> {
 		let mut app = setup();
-		let material = new_handle::<StandardMaterial>();
+		let material = MeshMaterial3d(new_handle::<StandardMaterial>());
 		let replacement = new_handle::<CustomMaterial>();
 		let parent = app
 			.world_mut()
@@ -120,9 +141,15 @@ mod tests {
 			.id();
 		let child = app.world_mut().spawn(material).set_parent(parent).id();
 
-		app.world_mut().run_system_once(replace_standard_material);
+		app.world_mut().run_system_once(replace_standard_material)?;
 
-		let child = app.world().entity(child);
-		assert_eq!(None, child.get::<Handle<StandardMaterial>>())
+		assert_eq!(
+			None,
+			app.world()
+				.entity(child)
+				.get::<MeshMaterial3d<StandardMaterial>>()
+				.map(|MeshMaterial3d(handle)| handle)
+		);
+		Ok(())
 	}
 }
