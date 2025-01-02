@@ -11,7 +11,7 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use bevy::ecs::system::RunSystemOnce;
+	use bevy::ecs::system::{RunSystemError, RunSystemOnce};
 
 	#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 	enum MyButton {
@@ -27,7 +27,7 @@ mod tests {
 	}
 
 	#[test]
-	fn holding_button_true() {
+	fn holding_button_true() -> Result<(), RunSystemError> {
 		let mut app = setup();
 		app.world_mut()
 			.resource_mut::<ButtonInput<MyButton>>()
@@ -35,13 +35,14 @@ mod tests {
 
 		let is_holding = app
 			.world_mut()
-			.run_system_once(holding_button(MyButton::Left));
+			.run_system_once(holding_button(MyButton::Left))?;
 
 		assert!(is_holding);
+		Ok(())
 	}
 
 	#[test]
-	fn holding_button_false() {
+	fn holding_button_false() -> Result<(), RunSystemError> {
 		let mut app = setup();
 		app.world_mut()
 			.resource_mut::<ButtonInput<MyButton>>()
@@ -49,8 +50,9 @@ mod tests {
 
 		let is_holding = app
 			.world_mut()
-			.run_system_once(holding_button(MyButton::Left));
+			.run_system_once(holding_button(MyButton::Left))?;
 
 		assert!(!is_holding);
+		Ok(())
 	}
 }
