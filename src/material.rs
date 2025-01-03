@@ -1,3 +1,4 @@
+use crate::traits::override_standard_material::OverrideStandardMaterial;
 use bevy::{
 	prelude::*,
 	render::render_resource::{AsBindGroup, ShaderRef},
@@ -27,4 +28,27 @@ impl Material for CustomMaterial {
 	fn alpha_mode(&self) -> AlphaMode {
 		self.alpha_mode
 	}
+}
+
+impl OverrideStandardMaterial for CustomMaterial {
+	const OVERRIDE_STANDARD_MATERIAL: bool = true;
+}
+
+#[derive(Asset, TypePath, AsBindGroup, Clone, Default)]
+pub struct DistortionMaterial {
+	#[uniform(1)]
+	pub time_secs: f32,
+	#[texture(2)]
+	#[sampler(3)]
+	pub first_pass: Handle<Image>,
+}
+
+impl Material for DistortionMaterial {
+	fn fragment_shader() -> ShaderRef {
+		"shaders/distortion_material.wgsl".into()
+	}
+}
+
+impl OverrideStandardMaterial for DistortionMaterial {
+	const OVERRIDE_STANDARD_MATERIAL: bool = false;
 }

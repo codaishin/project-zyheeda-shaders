@@ -5,8 +5,8 @@ use bevy::{
 	render::camera::RenderTarget,
 };
 use project_zyheeda_bevy_shaders::{
-	components::{toggle_visibility::ToggleVisibility, ReplacementMaterial},
-	material::CustomMaterial,
+	components::{apply_material::ApplyMaterial, toggle_visibility::ToggleVisibility},
+	material::{CustomMaterial, DistortionMaterial},
 	resources::{
 		render_target_image::RenderTargetImage,
 		window_size::WindowSize,
@@ -16,14 +16,20 @@ use project_zyheeda_bevy_shaders::{
 	systems::{
 		cam_movement::cam_movement,
 		holding_button::holding_button,
-		replace_standard_material::replace_standard_material,
 		set_material_time::set_material_time,
 	},
 };
 
 fn main() {
 	App::new()
-		.add_plugins((DefaultPlugins, MaterialPlugin::<CustomMaterial>::default()))
+		.add_plugins((
+			DefaultPlugins,
+			MaterialPlugin::<CustomMaterial>::default(),
+			MaterialPlugin::<DistortionMaterial> {
+				shadows_enabled: false,
+				..default()
+			},
+		))
 		.init_resource::<CameraRotationSettings>()
 		.init_resource::<CameraZoomSettings>()
 		.add_systems(
@@ -45,7 +51,13 @@ fn main() {
 				cam_movement::<MouseWheel>,
 			),
 		)
-		.add_systems(Update, replace_standard_material)
+		.add_systems(
+			Update,
+			(
+				ApplyMaterial::<CustomMaterial>::system,
+				ApplyMaterial::<DistortionMaterial>::system,
+			),
+		)
 		.add_systems(Update, set_material_time)
 		.run();
 }
@@ -56,6 +68,7 @@ fn setup(
 	mut meshes: ResMut<Assets<Mesh>>,
 	mut standard_materials: ResMut<Assets<StandardMaterial>>,
 	mut custom_materials: ResMut<Assets<CustomMaterial>>,
+	mut distortion_materials: ResMut<Assets<DistortionMaterial>>,
 	asset_server: Res<AssetServer>,
 ) {
 	let rotation_center = Vec3::new(0.0, 0.5, 0.0);
@@ -63,6 +76,10 @@ fn setup(
 		color: DARK_CYAN.into(),
 		alpha_mode: AlphaMode::Blend,
 		color_texture: Some(asset_server.load("textures/grid.png")),
+		..default()
+	});
+	let distortion_material = distortion_materials.add(DistortionMaterial {
+		first_pass: render_target.image.clone(),
 		..default()
 	});
 	let cam_transform = Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(rotation_center, Vec3::Y);
@@ -77,13 +94,15 @@ fn setup(
 
 	commands.spawn((
 		SceneRoot(asset_server.load("models/shield.glb#Scene0")),
-		ReplacementMaterial(custom_material.clone()),
+		ApplyMaterial(custom_material.clone()),
+		ApplyMaterial(distortion_material.clone()),
 		Transform::from_translation(rotation_center - Vec3::X * 1.),
 	));
 
 	commands.spawn((
 		SceneRoot(asset_server.load("models/sphere.glb#Scene0")),
-		ReplacementMaterial(custom_material.clone()),
+		ApplyMaterial(custom_material.clone()),
+		ApplyMaterial(distortion_material.clone()),
 		Transform::from_translation(rotation_center + Vec3::X * 1.),
 	));
 
@@ -134,7 +153,7 @@ fn setup(
 		})
 		.with_children(toggle_visibility_ui(
 			render_image_preview,
-			"Show pre-rendered Image",
+			"Show first-pass image",
 		));
 }
 
