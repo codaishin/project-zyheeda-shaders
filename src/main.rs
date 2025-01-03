@@ -116,11 +116,17 @@ fn setup(
 		Transform::from_xyz(5., 5., 5.),
 	));
 
-	commands.spawn((Camera3d::default(), cam_transform));
+	commands.spawn((cam_transform, Camera3d::default()));
 
 	commands.spawn((
-		Camera3d::default(),
 		cam_transform,
+		Camera3d::default(),
+		DistortionMaterial::camera(),
+	));
+
+	commands.spawn((
+		cam_transform,
+		Camera3d::default(),
 		Camera {
 			target: RenderTarget::Image(render_target.image.clone()),
 			..default()

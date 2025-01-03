@@ -1,7 +1,10 @@
-use crate::traits::override_standard_material::OverrideStandardMaterial;
+use crate::traits::override_standard_material::{GetMaterialConfig, MaterialConfig};
 use bevy::{
 	prelude::*,
-	render::render_resource::{AsBindGroup, ShaderRef},
+	render::{
+		render_resource::{AsBindGroup, ShaderRef},
+		view::{Layer, RenderLayers},
+	},
 };
 
 #[derive(Asset, TypePath, AsBindGroup, Clone, Default)]
@@ -30,8 +33,10 @@ impl Material for CustomMaterial {
 	}
 }
 
-impl OverrideStandardMaterial for CustomMaterial {
-	const OVERRIDE_STANDARD_MATERIAL: bool = true;
+impl GetMaterialConfig for CustomMaterial {
+	fn material_config() -> MaterialConfig {
+		const { MaterialConfig::OverrideStandardMaterial }
+	}
 }
 
 #[derive(Asset, TypePath, AsBindGroup, Clone, Default)]
@@ -43,12 +48,32 @@ pub struct DistortionMaterial {
 	pub first_pass: Handle<Image>,
 }
 
+impl DistortionMaterial {
+	const RENDER_LAYER: Layer = 42;
+
+	pub fn camera() -> (Camera, RenderLayers) {
+		(
+			Camera {
+				order: 1,
+				..default()
+			},
+			RenderLayers::layer(Self::RENDER_LAYER),
+		)
+	}
+}
+
 impl Material for DistortionMaterial {
 	fn fragment_shader() -> ShaderRef {
 		"shaders/distortion_material.wgsl".into()
 	}
 }
 
-impl OverrideStandardMaterial for DistortionMaterial {
-	const OVERRIDE_STANDARD_MATERIAL: bool = false;
+impl GetMaterialConfig for DistortionMaterial {
+	fn material_config() -> MaterialConfig {
+		const {
+			MaterialConfig::UseOnClonedChild {
+				render_layers: Some(RenderLayers::layer(Self::RENDER_LAYER)),
+			}
+		}
+	}
 }
