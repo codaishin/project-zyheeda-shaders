@@ -24,8 +24,11 @@
 	},
 	"cSpell.words": [
 		"automock",
+		"Bgra",
 		"consts",
 		"mockall",
+		"Srgb",
+		"Unorm",
 		"wgsl",
 		"zyheeda"
 	]

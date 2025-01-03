@@ -2,6 +2,7 @@ use bevy::{
 	color::palettes::css::{DARK_CYAN, WHITE},
 	input::mouse::{MouseMotion, MouseWheel},
 	prelude::*,
+	render::camera::RenderTarget,
 };
 use project_zyheeda_bevy_shaders::{
 	components::ReplacementMaterial,
@@ -9,6 +10,7 @@ use project_zyheeda_bevy_shaders::{
 	resources::{CameraRotationSettings, CameraZoomSettings},
 	systems::{
 		cam_movement::cam_movement,
+		create_render_target::create_render_image,
 		holding_button::holding_button,
 		replace_standard_material::replace_standard_material,
 		set_material_time::set_material_time,
@@ -20,7 +22,7 @@ fn main() {
 		.add_plugins((DefaultPlugins, MaterialPlugin::<CustomMaterial>::default()))
 		.init_resource::<CameraRotationSettings>()
 		.init_resource::<CameraZoomSettings>()
-		.add_systems(Startup, setup)
+		.add_systems(Startup, create_render_image.pipe(setup))
 		.add_systems(
 			Update,
 			(
@@ -34,6 +36,7 @@ fn main() {
 }
 
 fn setup(
+	In(render_target): In<RenderTarget>,
 	mut commands: Commands,
 	mut meshes: ResMut<Assets<Mesh>>,
 	mut standard_materials: ResMut<Assets<StandardMaterial>>,
@@ -68,10 +71,18 @@ fn setup(
 		Transform::from_translation(rotation_center + Vec3::X * 1.),
 	));
 
-	commands.spawn((
-		Camera3d::default(),
-		Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(rotation_center, Vec3::Y),
-	));
+	commands
+		.spawn((
+			Camera3d::default(),
+			Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(rotation_center, Vec3::Y),
+		))
+		.with_child((
+			Camera3d::default(),
+			Camera {
+				target: render_target,
+				..default()
+			},
+		));
 
 	commands.spawn((
 		PointLight {
