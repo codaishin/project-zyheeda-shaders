@@ -5,7 +5,7 @@ use bevy::{
 	render::camera::RenderTarget,
 };
 use project_zyheeda_bevy_shaders::{
-	components::ReplacementMaterial,
+	components::{toggle_visibility::ToggleVisibility, ReplacementMaterial},
 	material::CustomMaterial,
 	resources::{
 		render_target_image::RenderTargetImage,
@@ -33,7 +33,11 @@ fn main() {
 				RenderTargetImage::initialize.pipe(setup),
 			),
 		)
-		.add_systems(Update, (WindowSize::update, RenderTargetImage::update))
+		.add_systems(
+			Update,
+			(WindowSize::update, RenderTargetImage::update).chain(),
+		)
+		.add_systems(Update, (ToggleVisibility::toggle, ToggleVisibility::apply))
 		.add_systems(
 			Update,
 			(
@@ -104,18 +108,87 @@ fn setup(
 		},
 	));
 
-	// verify image is rendered correctly
-	commands.spawn((
-		ImageNode {
-			image: render_target.image.clone(),
-			..default()
-		},
-		Node {
-			width: Val::Vw(50.),
-			height: Val::Vh(50.),
-			..default()
-		},
-	));
+	let render_image_preview = commands
+		.spawn((
+			ImageNode {
+				image: render_target.image.clone(),
+				..default()
+			},
+			Node {
+				width: Val::Vw(100. / 3.),
+				height: Val::Vh(100. / 3.),
+				..default()
+			},
+		))
+		.id();
 
 	commands.insert_resource(render_target);
+
+	commands
+		.spawn(Node {
+			position_type: PositionType::Absolute,
+			left: Val::Px(0.),
+			bottom: Val::Px(0.),
+			margin: UiRect::all(Val::Px(5.)),
+			..default()
+		})
+		.with_children(toggle_visibility_ui(
+			render_image_preview,
+			"Show pre-rendered Image",
+		));
+}
+
+fn toggle_visibility_ui(entity: Entity, text: &'static str) -> impl Fn(&mut ChildBuilder) {
+	move |container| {
+		let mut toggles = vec![entity];
+		container
+			.spawn((
+				Button,
+				Node {
+					align_items: AlignItems::Center,
+					..default()
+				},
+			))
+			.with_children(|button| {
+				button
+					.spawn((
+						Node {
+							width: Val::Px(20.),
+							height: Val::Px(20.),
+							align_items: AlignItems::Center,
+							justify_content: JustifyContent::Center,
+							border: UiRect::all(Val::Px(2.)),
+							margin: UiRect::right(Val::Px(4.)),
+							..default()
+						},
+						BorderColor::from(WHITE),
+					))
+					.with_children(|checkbox| {
+						let is_visible = checkbox
+							.spawn((
+								Node {
+									width: Val::Px(10.),
+									height: Val::Px(10.),
+									..default()
+								},
+								BackgroundColor::from(WHITE),
+							))
+							.id();
+
+						toggles.push(is_visible);
+					});
+
+				button.spawn((
+					Text::new(text),
+					TextFont {
+						font_size: 15.,
+						..default()
+					},
+				));
+			})
+			.insert(ToggleVisibility {
+				toggles,
+				visible: false,
+			});
+	}
 }

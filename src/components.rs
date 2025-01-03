@@ -1,3 +1,5 @@
+pub mod toggle_visibility;
+
 use crate::material::CustomMaterial;
 use bevy::prelude::*;
 
