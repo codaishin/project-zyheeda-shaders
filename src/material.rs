@@ -1,4 +1,7 @@
-use crate::traits::override_standard_material::{GetMaterialConfig, MaterialConfig};
+use crate::traits::{
+	override_standard_material::{GetMaterialConfig, MaterialConfig},
+	refresh::Refresh,
+};
 use bevy::{
 	prelude::*,
 	render::{
@@ -59,6 +62,15 @@ impl DistortionMaterial {
 			},
 			RenderLayers::layer(Self::RENDER_LAYER),
 		)
+	}
+
+	pub fn refresh(
+		entities: Query<&MeshMaterial3d<DistortionMaterial>>,
+		mut materials: ResMut<Assets<DistortionMaterial>>,
+	) {
+		for MeshMaterial3d(handle) in &entities {
+			materials.refresh(handle.id());
+		}
 	}
 }
 

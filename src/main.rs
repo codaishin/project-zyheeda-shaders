@@ -43,6 +43,10 @@ fn main() {
 			Update,
 			(WindowSize::update, RenderTargetImage::update).chain(),
 		)
+		.add_systems(
+			Update,
+			DistortionMaterial::refresh.run_if(resource_changed::<WindowSize>),
+		)
 		.add_systems(Update, (ToggleVisibility::toggle, ToggleVisibility::apply))
 		.add_systems(
 			Update,
