@@ -65,7 +65,13 @@ fn main() {
 				ApplyMaterial::<DistortionMaterial>::system,
 			),
 		)
-		.add_systems(Update, set_material_time)
+		.add_systems(
+			Update,
+			(
+				set_material_time::<CustomMaterial>,
+				set_material_time::<DistortionMaterial>,
+			),
+		)
 		.add_systems(
 			Update,
 			CameraLabel::<SecondPass>::activity_based_on_visibility,
