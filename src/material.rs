@@ -3,12 +3,14 @@ use crate::{
 	traits::{
 		override_standard_material::{GetMaterialConfig, MaterialConfig},
 		refresh::Refresh,
+		update_time::UpdateTime,
 	},
 };
 use bevy::{
 	prelude::*,
 	render::render_resource::{AsBindGroup, ShaderRef},
 };
+use std::time::Duration;
 
 #[derive(Asset, TypePath, AsBindGroup, Clone, Default)]
 pub struct CustomMaterial {
@@ -39,6 +41,12 @@ impl Material for CustomMaterial {
 impl GetMaterialConfig for CustomMaterial {
 	fn material_config() -> MaterialConfig {
 		const { MaterialConfig::OverrideStandardMaterial }
+	}
+}
+
+impl UpdateTime for CustomMaterial {
+	fn update_time(&mut self, time: Duration) {
+		self.time_secs = time.as_secs_f32();
 	}
 }
 
@@ -73,5 +81,11 @@ impl GetMaterialConfig for DistortionMaterial {
 		MaterialConfig::UseOnClonedChild {
 			render_layers: Some(CameraLabel::<SecondPass>::render_layers()),
 		}
+	}
+}
+
+impl UpdateTime for DistortionMaterial {
+	fn update_time(&mut self, time: Duration) {
+		self.time_secs = time.as_secs_f32();
 	}
 }
