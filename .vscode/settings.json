@@ -22,10 +22,27 @@
 		"editor.insertSpaces": true,
 		"editor.defaultFormatter": "wgsl-analyzer.wgsl-analyzer"
 	},
+	"editor.semanticTokenColorCustomizations": {
+		"rules": {
+			"comment": "#b42b2b",
+			"comment.documentation": "#2d8f3f"
+		},
+	},
+	"todo-tree.highlights.customHighlight": {
+		"FIXME": {
+			"foreground": "#000000",
+			"background": "#b42b2b",
+			"iconColour": "#b42b2b",
+			"gutterIcon": true
+		}
+	},
 	"cSpell.words": [
 		"automock",
+		"Bgra",
 		"consts",
 		"mockall",
+		"Srgb",
+		"Unorm",
 		"wgsl",
 		"zyheeda"
 	]

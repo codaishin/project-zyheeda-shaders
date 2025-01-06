@@ -1,4 +1,7 @@
-use bevy::prelude::Resource;
+pub mod render_target_image;
+pub mod window_size;
+
+use bevy::prelude::*;
 
 #[derive(Resource, Clone, Copy)]
 pub struct CameraZoomSettings {

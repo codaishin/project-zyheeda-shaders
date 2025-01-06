@@ -1,6 +1,3 @@
-use crate::material::CustomMaterial;
-use bevy::prelude::*;
-
-#[derive(Component, Default)]
-#[require(SceneRoot, Transform, Visibility)]
-pub struct ReplacementMaterial(pub Handle<CustomMaterial>);
+pub mod apply_material;
+pub mod camera_label;
+pub mod toggle_visibility;
