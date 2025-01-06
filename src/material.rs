@@ -1,15 +1,13 @@
-use crate::{
-	components::camera_label::{CameraLabel, SecondPass},
-	traits::{
-		override_standard_material::{GetMaterialConfig, MaterialConfig},
-		refresh::Refresh,
-		update_time::UpdateTime,
-	},
+use crate::traits::{
+	get_material_render_pass::{GetMaterialRenderPass, RenderPass},
+	refresh::Refresh,
+	update_time::UpdateTime,
 };
 use bevy::{
 	prelude::*,
 	render::render_resource::{AsBindGroup, ShaderRef},
 };
+use core::f32;
 use std::time::Duration;
 
 #[derive(Asset, TypePath, AsBindGroup, Clone, Default)]
@@ -25,10 +23,6 @@ pub struct CustomMaterial {
 }
 
 impl Material for CustomMaterial {
-	fn vertex_shader() -> ShaderRef {
-		"shaders/custom_material.wgsl".into()
-	}
-
 	fn fragment_shader() -> ShaderRef {
 		"shaders/custom_material.wgsl".into()
 	}
@@ -38,9 +32,9 @@ impl Material for CustomMaterial {
 	}
 }
 
-impl GetMaterialConfig for CustomMaterial {
-	fn material_config() -> MaterialConfig {
-		const { MaterialConfig::OverrideStandardMaterial }
+impl GetMaterialRenderPass for CustomMaterial {
+	fn render_pass() -> RenderPass {
+		const { RenderPass::FirstPass }
 	}
 }
 
@@ -76,11 +70,9 @@ impl Material for DistortionMaterial {
 	}
 }
 
-impl GetMaterialConfig for DistortionMaterial {
-	fn material_config() -> MaterialConfig {
-		MaterialConfig::UseOnClonedChild {
-			render_layers: Some(CameraLabel::<SecondPass>::render_layers()),
-		}
+impl GetMaterialRenderPass for DistortionMaterial {
+	fn render_pass() -> RenderPass {
+		const { RenderPass::SecondPass }
 	}
 }
 
