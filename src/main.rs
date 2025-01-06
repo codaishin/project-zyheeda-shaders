@@ -2,10 +2,13 @@ use bevy::{
 	color::palettes::css::{DARK_CYAN, WHITE},
 	input::mouse::{MouseMotion, MouseWheel},
 	prelude::*,
-	render::camera::RenderTarget,
 };
 use project_zyheeda_bevy_shaders::{
-	components::{apply_material::ApplyMaterial, toggle_visibility::ToggleVisibility},
+	components::{
+		apply_material::ApplyMaterial,
+		camera_label::{CameraLabel, FirstPass, FirstPassTexture, SecondPass, Ui},
+		toggle_visibility::ToggleVisibility,
+	},
 	material::{CustomMaterial, DistortionMaterial},
 	resources::{
 		render_target_image::RenderTargetImage,
@@ -63,6 +66,10 @@ fn main() {
 			),
 		)
 		.add_systems(Update, set_material_time)
+		.add_systems(
+			Update,
+			CameraLabel::<SecondPass>::activity_based_on_visibility,
+		)
 		.run();
 }
 
@@ -120,21 +127,30 @@ fn setup(
 		Transform::from_xyz(5., 5., 5.),
 	));
 
-	commands.spawn((cam_transform, Camera3d::default()));
-
 	commands.spawn((
 		cam_transform,
 		Camera3d::default(),
-		DistortionMaterial::camera(),
+		CameraLabel::<FirstPass>::camera(),
 	));
 
 	commands.spawn((
 		cam_transform,
 		Camera3d::default(),
-		Camera {
-			target: RenderTarget::Image(render_target.image.clone()),
-			..default()
-		},
+		CameraLabel::<FirstPassTexture>::camera(render_target.image.clone()),
+	));
+
+	let second_pass_camera = commands
+		.spawn((
+			cam_transform,
+			Camera3d::default(),
+			CameraLabel::<SecondPass>::camera(),
+		))
+		.id();
+
+	commands.spawn((
+		cam_transform,
+		Camera3d::default(),
+		CameraLabel::<Ui>::camera(),
 	));
 
 	let render_image_preview = commands
@@ -148,6 +164,7 @@ fn setup(
 				height: Val::Vh(100. / 3.),
 				..default()
 			},
+			CameraLabel::<Ui>::render_layers(),
 		))
 		.id();
 
@@ -159,11 +176,16 @@ fn setup(
 			left: Val::Px(0.),
 			bottom: Val::Px(0.),
 			margin: UiRect::all(Val::Px(5.)),
+			flex_direction: FlexDirection::Column,
 			..default()
 		})
 		.with_children(toggle_visibility_ui(
 			render_image_preview,
 			"Show first-pass image",
+		))
+		.with_children(toggle_visibility_ui(
+			second_pass_camera,
+			"Apply second pass",
 		));
 }
 
@@ -175,6 +197,7 @@ fn toggle_visibility_ui(entity: Entity, text: &'static str) -> impl Fn(&mut Chil
 				Button,
 				Node {
 					align_items: AlignItems::Center,
+					margin: UiRect::all(Val::Px(2.)),
 					..default()
 				},
 			))

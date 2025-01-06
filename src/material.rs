@@ -1,13 +1,13 @@
-use crate::traits::{
-	override_standard_material::{GetMaterialConfig, MaterialConfig},
-	refresh::Refresh,
+use crate::{
+	components::camera_label::{CameraLabel, SecondPass},
+	traits::{
+		override_standard_material::{GetMaterialConfig, MaterialConfig},
+		refresh::Refresh,
+	},
 };
 use bevy::{
 	prelude::*,
-	render::{
-		render_resource::{AsBindGroup, ShaderRef},
-		view::{Layer, RenderLayers},
-	},
+	render::render_resource::{AsBindGroup, ShaderRef},
 };
 
 #[derive(Asset, TypePath, AsBindGroup, Clone, Default)]
@@ -52,18 +52,6 @@ pub struct DistortionMaterial {
 }
 
 impl DistortionMaterial {
-	const RENDER_LAYER: Layer = 42;
-
-	pub fn camera() -> (Camera, RenderLayers) {
-		(
-			Camera {
-				order: 1,
-				..default()
-			},
-			RenderLayers::layer(Self::RENDER_LAYER),
-		)
-	}
-
 	pub fn refresh(
 		entities: Query<&MeshMaterial3d<DistortionMaterial>>,
 		mut materials: ResMut<Assets<DistortionMaterial>>,
@@ -82,10 +70,8 @@ impl Material for DistortionMaterial {
 
 impl GetMaterialConfig for DistortionMaterial {
 	fn material_config() -> MaterialConfig {
-		const {
-			MaterialConfig::UseOnClonedChild {
-				render_layers: Some(RenderLayers::layer(Self::RENDER_LAYER)),
-			}
+		MaterialConfig::UseOnClonedChild {
+			render_layers: Some(CameraLabel::<SecondPass>::render_layers()),
 		}
 	}
 }
