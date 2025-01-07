@@ -4,11 +4,14 @@
 #import bevy_pbr::mesh_functions::mesh_normal_local_to_world
 #import bevy_pbr::forward_io::Vertex
 #import bevy_pbr::forward_io::VertexOutput
+#import bevy_pbr::mesh_view_bindings
+#import bevy_render::globals::Globals
+
+@group(0) @binding(11) var<uniform> globals: Globals;
 
 @group(2) @binding(0) var<uniform> material_color: vec4<f32>;
-@group(2) @binding(1) var<uniform> time_secs: f32;
-@group(2) @binding(2) var material_color_texture: texture_2d<f32>;
-@group(2) @binding(3) var material_color_sampler: sampler;
+@group(2) @binding(1) var material_color_texture: texture_2d<f32>;
+@group(2) @binding(2) var material_color_sampler: sampler;
 
 @vertex
 fn vertex(vertex: Vertex) -> VertexOutput {

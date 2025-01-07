@@ -16,11 +16,7 @@ use project_zyheeda_bevy_shaders::{
 		CameraRotationSettings,
 		CameraZoomSettings,
 	},
-	systems::{
-		cam_movement::cam_movement,
-		holding_button::holding_button,
-		set_material_time::set_material_time,
-	},
+	systems::{cam_movement::cam_movement, holding_button::holding_button},
 };
 
 fn main() {
@@ -67,13 +63,6 @@ fn main() {
 		)
 		.add_systems(
 			Update,
-			(
-				set_material_time::<CustomMaterial>,
-				set_material_time::<DistortionMaterial>,
-			),
-		)
-		.add_systems(
-			Update,
 			CameraLabel::<SecondPass>::activity_based_on_visibility,
 		)
 		.run();
@@ -93,11 +82,9 @@ fn setup(
 		color: DARK_CYAN.into(),
 		alpha_mode: AlphaMode::Blend,
 		color_texture: Some(asset_server.load("textures/grid.png")),
-		..default()
 	});
 	let distortion_material = distortion_materials.add(DistortionMaterial {
 		first_pass: render_target.image.clone(),
-		..default()
 	});
 	let cam_transform = Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(rotation_center, Vec3::Y);
 
